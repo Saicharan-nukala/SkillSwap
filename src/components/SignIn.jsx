@@ -1,4 +1,5 @@
 'use client'
+import { useNavigate } from 'react-router-dom'
 import {
   Flex,
   Box,
@@ -12,7 +13,14 @@ import {
   Text,
   useColorModeValue,
 } from '@chakra-ui/react'
+
 export default function SignIn() {
+  const navigate = useNavigate();
+
+  const handleProfile = () => {
+    console.log('Hai');
+    navigate('/profile');
+  };
   return (
     <Flex
       minH={'100vh'}
@@ -80,6 +88,7 @@ export default function SignIn() {
                 color={'white'}
                 fontWeight="medium"
                 borderRadius="md"
+                onClick={handleProfile}
                 _hover={{
                   bg: 'primary.600',
                   transform: 'translateY(-1px)',

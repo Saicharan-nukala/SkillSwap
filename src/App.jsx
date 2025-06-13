@@ -4,6 +4,7 @@ import DisplayPage from './components/DisplayPage';
 import SignUp from './components/SignUp';
 import SignIn from './components/SignIn';
 import MainPage from './components/MainPage';
+import ProfilePage from './components/ProfilePage';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -47,6 +48,8 @@ function App() {
               )
             } 
           />
+          {/* New protected profile page */}
+          <Route path="/profile" element={<ProfilePage />} />
         </Routes>
       </div>
     </Router>
