@@ -893,7 +893,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
   };
 
   return (
-    <Box minH="100vh" bg="white">
+    <Box minH="100vh"   marginTop="-4vh" width="83vw" >
       {/* Navigation */}
       <Box
         position="sticky"
@@ -906,7 +906,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
         py={4}
       >
         <Container maxW="container.lg">
-          <HStack spacing={8}>
+          <HStack spacing={8} justify="center">
             {tabs.map((tab) => (
               <Box key={tab.id} position="relative">
                 <Button
@@ -924,7 +924,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                   }}
                   color={activeTab === tab.id ? 'gray.800' : 'gray.600'}
                   fontWeight={activeTab === tab.id ? 'semibold' : 'normal'}
-                  fontSize="sm"
+                  fontSize="md"
                   px={0}
                   py={2}
                   h="auto"

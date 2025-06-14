@@ -5,6 +5,9 @@ import SignUp from './components/SignUp';
 import SignIn from './components/SignIn';
 import MainPage from './components/MainPage';
 import ProfilePage from './components/ProfilePage';
+import Dashboard from './components/Dashboard';
+import Swaps from './components/Swaps';
+import NewSwaps from './components/NewSwaps';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -22,34 +25,36 @@ function App() {
       <div className="App">
         <Routes>
           {/* Landing/Display page */}
-          <Route 
-            path="/" 
-            element={<DisplayPage />} 
+          <Route
+            path="/"
+            element={<DisplayPage />}
           />
-          
+
           {/* Auth pages */}
-          <Route 
-            path="/signup" 
-            element={<SignUp onLogin={handleLogin} />} 
+          <Route
+            path="/signup"
+            element={<SignUp onLogin={handleLogin} />}
           />
-          <Route 
-            path="/signin" 
-            element={<SignIn onLogin={handleLogin} />} 
+          <Route
+            path="/signin"
+            element={<SignIn onLogin={handleLogin} />}
           />
-          
+
           {/* Protected main page */}
-          <Route 
-            path="/main" 
+          <Route
+            path="/main"
             element={
               isAuthenticated ? (
                 <MainPage onLogout={handleLogout} />
               ) : (
                 <Navigate to="/signin" replace />
               )
-            } 
+            }
           />
-          {/* New protected profile page */}
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/swaps" element={<Swaps />} />
+          <Route path="/newswaps" element={<NewSwaps />} />
         </Routes>
       </div>
     </Router>

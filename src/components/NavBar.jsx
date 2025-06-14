@@ -1,117 +1,402 @@
 'use client'
 
+import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import {
-  Box,
-  Flex,
-  Avatar,
-  HStack,
-  Text,
   IconButton,
-  Button,
+  Avatar,
+  Box,
+  CloseButton,
+  Flex,
+  HStack,
+  VStack,
+  Icon,
+  useColorModeValue,
+  Text,
+  Drawer,
+  DrawerContent,
+  useDisclosure,
   Menu,
   MenuButton,
-  MenuList,
-  MenuItem,
   MenuDivider,
-  useDisclosure,
-  Stack,
+  MenuItem,
+  MenuList,
   Image,
+  Button,
+  Tooltip,
+  useBreakpointValue,
 } from '@chakra-ui/react'
-import { HamburgerIcon, CloseIcon, AddIcon } from '@chakra-ui/icons'
+import {
+  FiHome,
+  FiTrendingUp,
+  FiCompass,
+  FiStar,
+  FiSettings,
+  FiMenu,
+  FiBell,
+  FiChevronDown,
+  FiChevronLeft,
+  FiChevronRight,
+  FiX,
+} from 'react-icons/fi'
+import { AddIcon } from '@chakra-ui/icons'
 
-const Links = ['Dashboard', 'Projects', 'Team']
+const LinkItems = [
+  { name: 'Dashboard', icon: FiHome, path: '/dashboard' },
+  { name: 'Swaps', icon: FiTrendingUp, path: '/swaps' },
+]
 
-const NavLink = ({ children }) => {
+const SidebarContent = ({ onClose, isCollapsed, onToggleCollapse, ...rest }) => {
+  const navigate = useNavigate()
+  const isMobile = useBreakpointValue({ base: true, md: false })
+
+  const handleNavigation = (path) => {
+    navigate(path)
+    if (isMobile) {
+      onClose()
+    }
+  }
+
+  const sidebarWidth = isCollapsed ? '80px' : '240px'
+
   return (
     <Box
-      as="a"
-      px={2}
-      py={1}
-      rounded={'md'}
-      _hover={{
-        textDecoration: 'none',
-        bg: 'primary.100',
-        color: 'primary.600',
-      }}
-      href={'#'}>
-      {children}
+      transition="width 0.3s ease"
+      bg={useColorModeValue('white', 'gray.900')}
+      borderRight="1px"
+      borderRightColor={useColorModeValue('gray.200', 'gray.700')}
+      w={sidebarWidth}
+      pos="fixed"
+      h="full"
+      zIndex={30}
+      {...rest}>
+      
+      {/* Header with Logo and Collapse Toggle */}
+      <Flex h="20" alignItems="center" justifyContent="space-between" px={isCollapsed ? "4" : "8"}>
+        {!isCollapsed && (
+          <Image
+            src="/SkillSwap_logo.png"
+            alt="SkillSwap Logo"
+            h="40px"
+            w="auto"
+            transition="opacity 0.3s ease"
+          />
+        )}
+        
+        {/* Mobile Close Button */}
+        <IconButton
+          display={{ base: 'flex', md: 'none' }}
+          onClick={onClose}
+          variant="ghost"
+          aria-label="Close sidebar"
+          icon={<FiX />}
+          size="sm"
+          color="gray.600"
+          _hover={{ bg: 'red.50', color: 'red.500' }}
+        />
+        
+        {/* Desktop Collapse Toggle */}
+        <IconButton
+          display={{ base: 'none', md: 'flex' }}
+          onClick={onToggleCollapse}
+          variant="ghost"
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          icon={isCollapsed ? <FiChevronRight /> : <FiChevronLeft />}
+          size="sm"
+          color="gray.600"
+          _hover={{ bg: 'primary.50' }}
+          ml={isCollapsed ? 0 : "auto"}
+        />
+      </Flex>
+
+      {/* Navigation Items */}
+      <VStack spacing={2} align="stretch" px={isCollapsed ? "2" : "4"}>
+        {LinkItems.map((link) => (
+          <NavItem 
+            key={link.name} 
+            icon={link.icon}
+            isCollapsed={isCollapsed}
+            onClick={() => handleNavigation(link.path)}
+          >
+            {link.name}
+          </NavItem>
+        ))}
+      </VStack>
     </Box>
   )
 }
 
-export default function NavBar() {
-  const { isOpen, onOpen, onClose } = useDisclosure()
+const NavItem = ({ icon, children, onClick, isCollapsed, ...rest }) => {
+  const navItem = (
+    <Box
+      onClick={onClick}
+      style={{ textDecoration: 'none' }}
+      _focus={{ boxShadow: 'none' }}
+      w="full">
+      <Flex
+        align="center"
+        p="3"
+        borderRadius="lg"
+        role="group"
+        cursor="pointer"
+        _hover={{
+          bg: 'primary.50',
+          color: 'primary.600',
+        }}
+        justifyContent={isCollapsed ? "center" : "flex-start"}
+        transition="all 0.3s ease"
+        {...rest}>
+        {icon && (
+          <Icon
+            mr={isCollapsed ? "0" : "4"}
+            fontSize="18"
+            _groupHover={{
+              color: 'primary.600',
+            }}
+            as={icon}
+          />
+        )}
+        {!isCollapsed && (
+          <Text
+            fontSize="sm"
+            fontWeight="medium"
+            opacity={isCollapsed ? 0 : 1}
+            transition="opacity 0.3s ease">
+            {children}
+          </Text>
+        )}
+      </Flex>
+    </Box>
+  )
+
+  // Wrap with tooltip when collapsed
+  if (isCollapsed) {
+    return (
+      <Tooltip
+        label={children}
+        placement="right"
+        hasArrow
+        bg="gray.900"
+        color="white"
+        fontSize="sm">
+        {navItem}
+      </Tooltip>
+    )
+  }
+
+  return navItem
+}
+
+const MobileNav = ({ onOpen, sidebarWidth, ...rest }) => {
+  const navigate = useNavigate()
+
+  const handleProfile = () => {
+    navigate('/profile')
+  }
+
+  const handleNewSwaps = () => {
+    navigate('/newswaps')
+  }
 
   return (
-    <>
-      <Box bg="white" px={4} borderBottom="1px" borderColor="gray.200">
-        <Flex h={16} alignItems={'center'} justifyContent={'space-between'}>
-          <IconButton
-            size={'md'}
-            icon={isOpen ? <CloseIcon /> : <HamburgerIcon />}
-            aria-label={'Open Menu'}
-            display={{ md: 'none' }}
-            onClick={isOpen ? onClose : onOpen}
-            color="gray.600"
-            _hover={{ bg: 'primary.50' }}
+    <Flex
+      ml={{ base: 0, md: sidebarWidth }}
+      px={{ base: 4, md: 4 }}
+      height="20"
+      alignItems="center"
+      bg={useColorModeValue('white', 'gray.900')}
+      borderBottomWidth="1px"
+      borderBottomColor={useColorModeValue('gray.200', 'gray.700')}
+      justifyContent={{ base: 'space-between', md: 'flex-end' }}
+      transition="margin-left 0.3s ease"
+      position="relative"
+      zIndex={20}
+      {...rest}>
+      
+      {/* Mobile Menu Button */}
+      <IconButton
+        display={{ base: 'flex', md: 'none' }}
+        onClick={onOpen}
+        variant="outline"
+        aria-label="open menu"
+        icon={<FiMenu />}
+        color="gray.600"
+        _hover={{ bg: 'primary.50' }}
+      />
+
+      {/* Mobile Logo */}
+      <Image
+        src="/SkillSwap_logo.png"
+        alt="SkillSwap Logo"
+        h="40px"
+        w="auto"
+        display={{ base: 'flex', md: 'none' }}
+      />
+
+      {/* Right Side Actions */}
+      <HStack spacing={{ base: '0', md: '6' }}>
+        <Button
+          variant={'primary'}
+          size={'sm'}
+          mr={4}
+          onClick={handleNewSwaps}
+          leftIcon={<AddIcon />}
+          display={{ base: 'none', md: 'flex' }}
+          _hover={{ transform: 'translateY(-1px)', boxShadow: 'md' }}
+          transition="all 0.2s ease">
+          New Swaps
+        </Button>
+        
+        <IconButton 
+          size="lg" 
+          variant="ghost" 
+          aria-label="notifications" 
+          icon={<FiBell />}
+          color="gray.600"
+          _hover={{ bg: 'primary.50', color: 'primary.600' }}
+          position="relative">
+          {/* Notification Badge */}
+          <Box
+            position="absolute"
+            top="8px"
+            right="8px"
+            w="8px"
+            h="8px"
+            bg="red.500"
+            borderRadius="full"
+            display="none" // Show when there are notifications
           />
-          <HStack spacing={8} alignItems={'center'}>
-            <Box>
-              <Image 
-                src="/SkillSwap_logo.png" // Update this path
-                alt="Company Logo"
-                h="40px" // Adjust height as needed
-                w="auto"
-              />
-            </Box>
-            <HStack as={'nav'} spacing={4} display={{ base: 'none', md: 'flex' }}>
-              {Links.map((link) => (
-                <NavLink key={link}>{link}</NavLink>
-              ))}
-            </HStack>
-          </HStack>
-          <Flex alignItems={'center'}>
-            <Button
-              variant={'primary'}
-              size={'sm'}
-              mr={4}
-              leftIcon={<AddIcon />}>
-              Action
-            </Button>
-            <Menu>
-              <MenuButton
-                as={Button}
-                rounded={'full'}
-                variant={'link'}
-                cursor={'pointer'}
-                minW={0}>
+        </IconButton>
+        
+        <Flex alignItems={'center'} position="relative" zIndex={1001}>
+          <Menu>
+            <MenuButton 
+              py={2} 
+              transition="all 0.3s" 
+              _focus={{ boxShadow: 'none' }}
+              _hover={{ bg: 'primary.50' }}
+              borderRadius="md"
+              px={2}>
+              <HStack>
                 <Avatar
                   size={'sm'}
-                  src={
-                    'https://images.unsplash.com/photo-1493666438817-866a91353ca9?ixlib=rb-0.3.5&q=80&fm=jpg&crop=faces&fit=crop&h=200&w=200&s=b616b2c5b373a80ffc9636ba24f7a4a9'
-                  }
+                  bg='blue.500'
+                  cursor="pointer"
                 />
-              </MenuButton>
-              <MenuList borderColor="gray.200" boxShadow="lg">
-                <MenuItem _hover={{ bg: 'primary.50' }}>Link 1</MenuItem>
-                <MenuItem _hover={{ bg: 'primary.50' }}>Link 2</MenuItem>
-                <MenuDivider />
-                <MenuItem _hover={{ bg: 'primary.50' }}>Link 3</MenuItem>
-              </MenuList>
-            </Menu>
-          </Flex>
+                <VStack
+                  display={{ base: 'none', md: 'flex' }}
+                  alignItems="flex-start"
+                  spacing="1px"
+                  ml="2">
+                  <Text fontSize="sm" fontWeight="medium">User Name</Text>
+                  <Text fontSize="xs" color="gray.600">
+                    Member
+                  </Text>
+                </VStack>
+                <Box display={{ base: 'none', md: 'flex' }}>
+                  <FiChevronDown />
+                </Box>
+              </HStack>
+            </MenuButton>
+            <MenuList
+              bg={useColorModeValue('white', 'gray.900')}
+              borderColor={useColorModeValue('gray.200', 'gray.700')}
+              boxShadow="lg"
+              minW="200px"
+              zIndex={1001}>
+              <MenuItem 
+                _hover={{ bg: 'primary.50' }} 
+                onClick={handleProfile}
+                icon={<Icon as={FiHome} />}>
+                Profile
+              </MenuItem>
+              <MenuItem 
+                _hover={{ bg: 'primary.50' }}
+                icon={<Icon as={FiSettings} />}>
+                Settings
+              </MenuItem>
+              <MenuItem 
+                _hover={{ bg: 'primary.50' }}
+                icon={<Icon as={FiStar} />}>
+                Billing
+              </MenuItem>
+              <MenuDivider />
+              <MenuItem 
+                _hover={{ bg: 'red.50' }} 
+                color="red.500"
+                fontWeight="medium">
+                Sign out
+              </MenuItem>
+            </MenuList>
+          </Menu>
         </Flex>
-
-        {isOpen ? (
-          <Box pb={4} display={{ md: 'none' }} bg="white">
-            <Stack as={'nav'} spacing={4}>
-              {Links.map((link) => (
-                <NavLink key={link}>{link}</NavLink>
-              ))}
-            </Stack>
-          </Box>
-        ) : null}
-      </Box>
-    </>
+      </HStack>
+    </Flex>
   )
 }
+
+const NavBar = ({ children }) => {
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const isMobile = useBreakpointValue({ base: true, md: false })
+
+  // Auto-collapse on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setIsCollapsed(false)
+    }
+  }, [isMobile])
+
+  const handleToggleCollapse = () => {
+    setIsCollapsed(!isCollapsed)
+  }
+
+  const sidebarWidth = isCollapsed ? '80px' : '240px'
+
+  return (
+    <Box minH="100vh" bg={useColorModeValue('gray.50', 'gray.900')}>
+      {/* Desktop Sidebar */}
+      <SidebarContent 
+        onClose={onClose} 
+        isCollapsed={isCollapsed}
+        onToggleCollapse={handleToggleCollapse}
+        display={{ base: 'none', md: 'block' }} 
+      />
+      
+      {/* Mobile Drawer */}
+      <Drawer
+        isOpen={isOpen}
+        placement="left"
+        onClose={onClose}
+        returnFocusOnClose={false}
+        onOverlayClick={onClose}
+        size="xs">
+        <DrawerContent>
+          <SidebarContent 
+            onClose={onClose} 
+            isCollapsed={false}
+            onToggleCollapse={() => {}}
+          />
+        </DrawerContent>
+      </Drawer>
+      
+      {/* Top Navigation */}
+      <MobileNav 
+        onOpen={onOpen} 
+        isCollapsed={isCollapsed}
+        sidebarWidth={sidebarWidth}
+      />
+      
+      {/* Main Content */}
+      <Box 
+        ml={{ base: 0, md: sidebarWidth }} 
+        p="6"
+        transition="margin-left 0.3s ease"
+        minH="calc(100vh - 80px)">
+        {children}
+      </Box>
+    </Box>
+  )
+}
+
+export default NavBar

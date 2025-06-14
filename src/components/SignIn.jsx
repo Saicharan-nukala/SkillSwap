@@ -18,7 +18,6 @@ export default function SignIn() {
   const navigate = useNavigate();
 
   const handleProfile = () => {
-    console.log('Hai');
     navigate('/profile');
   };
   return (
