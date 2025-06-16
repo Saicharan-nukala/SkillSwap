@@ -1,7 +1,20 @@
 // controllers/authController.js
 const User = require('../models/User');
+const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { sendOTPEmail } = require('../services/emailService');
+
+// Generate JWT Token
+const generateToken = (id) => {
+  // Check if JWT_SECRET exists
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined in environment variables');
+  }
+  
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRE || '30d',
+  });
+};
 
 // Generate 6-digit OTP
 const generateOTP = () => {
@@ -261,7 +274,7 @@ const resendOTP = async (req, res) => {
   }
 };
 
-// Login (basic version - you might want to add JWT)
+// Login with JWT token
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -305,10 +318,22 @@ const login = async (req, res) => {
     user.lastActive = new Date();
     await user.save();
 
-    // Return user data (you might want to add JWT token here)
+    // Generate JWT token with better error handling
+    let token;
+    try {
+      token = generateToken(user._id);
+    } catch (tokenError) {
+      console.error('Token generation error:', tokenError);
+      return res.status(500).json({
+        success: false,
+        message: 'Authentication configuration error. Please contact support.'
+      });
+    }
+    // Return user data with token
     res.status(200).json({
       success: true,
       message: 'Login successful',
+      token,
       data: {
         userId: user._id,
         email: user.email,

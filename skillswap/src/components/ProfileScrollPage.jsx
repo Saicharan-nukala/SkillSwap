@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Flex,
@@ -22,14 +22,15 @@ import {
   IconButton,
   FormControl,
   FormLabel,
-  Select,
-  Checkbox,
-  Switch,
-  Avatar
+  Avatar,
+  Progress,
+  Tooltip,
+  Spinner
 } from '@chakra-ui/react';
-import { EditIcon, CheckIcon, CloseIcon, AddIcon, SettingsIcon, DeleteIcon } from '@chakra-ui/icons';
+import { EditIcon, CloseIcon, AddIcon, SettingsIcon, DeleteIcon } from '@chakra-ui/icons';
+import axios from 'axios';
 
-const ProfileScrollPage = ({ isViewMode = false }) => {
+const ProfileScrollPage = ({ isViewMode = false, userId }) => {
   const [activeTab, setActiveTab] = useState('about');
   const [editMode, setEditMode] = useState({
     about: false,
@@ -40,188 +41,198 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
   });
   const [editCategoryIndex, setEditCategoryIndex] = useState(null);
   const [newSkill, setNewSkill] = useState('');
+  const [profileCompletion, setProfileCompletion] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsSaving] = useState(false);
   const toast = useToast();
 
-  // State for editable content
-  const [profileData, setProfileData] = useState({
-    about: {
-      intro: "I'm a passionate full-stack developer with a love for creating seamless user experiences and solving complex problems through clean, efficient code. My expertise spans across modern web technologies and frameworks.",
-      experience: "With over 5 years of experience in web development, I specialize in building scalable applications that prioritize both functionality and user experience. I'm constantly learning new technologies and methodologies to stay at the forefront of development.",
-      quote: "The best way to predict the future is to create it."
-    },
-    skills: [
-      {
-        category: 'Frontend Development',
-        skills: ['React', 'Vue.js', 'Angular', 'TypeScript', 'JavaScript'],
-        colorScheme: 'blue'
-      },
-      {
-        category: 'Backend Development',
-        skills: ['Node.js', 'Python', 'Express', 'Django', 'PostgreSQL'],
-        colorScheme: 'green'
-      },
-      {
-        category: 'Design & Styling',
-        skills: ['CSS3', 'Sass', 'Tailwind CSS', 'Figma', 'Adobe XD'],
-        colorScheme: 'purple'
-      },
-      {
-        category: 'Tools & Technologies',
-        skills: ['Git', 'Docker', 'AWS', 'MongoDB', 'Firebase'],
-        colorScheme: 'orange'
-      }
-    ],
-    experience: [
-      {
-        title: 'Senior Frontend Developer',
-        company: 'Tech Innovations Inc.',
-        period: '2022 - Present',
-        description: 'Led development of multiple React applications, improved performance by 40%, and mentored junior developers. Collaborated with cross-functional teams to deliver high-quality products.'
-      },
-      {
-        title: 'Full Stack Developer',
-        company: 'Digital Solutions Startup',
-        period: '2020 - 2022',
-        description: 'Built and maintained web applications using React, Node.js, and PostgreSQL. Implemented responsive designs and optimized database queries for better performance.'
-      },
-      {
-        title: 'Junior Developer',
-        company: 'Creative Web Agency',
-        period: '2018 - 2020',
-        description: 'Developed responsive websites and learned modern development practices. Gained experience with various CMS platforms and e-commerce solutions.'
-      }
-    ],
-    projects: [
-      {
-        name: 'SkillSwap Platform',
-        tech: 'React • Node.js • PostgreSQL',
-        description: 'A comprehensive platform for skill exchange where users can teach and learn from each other. Features real-time messaging, booking system, and user ratings.'
-      },
-      {
-        name: 'E-commerce Dashboard',
-        tech: 'Vue.js • Express • MongoDB',
-        description: 'A full-featured admin dashboard for e-commerce management with analytics, inventory tracking, and order processing capabilities.'
-      },
-      {
-        name: 'Task Management App',
-        tech: 'React • Firebase • Material-UI',
-        description: 'A collaborative task management application with real-time updates, drag-and-drop functionality, and team collaboration features.'
-      },
-      {
-        name: 'Weather Analytics',
-        tech: 'Python • D3.js • API Integration',
-        description: 'A responsive weather analytics dashboard with beautiful data visualizations and historical weather pattern analysis.'
-      }
-    ],
-    settings: {
-      email: 'user@example.com',
-      username: 'dev_user123',
-    }
-  });
-
-  const tabs = [
-    { id: 'about', label: 'About' },
-    { id: 'skills', label: 'Skills' },
-    { id: 'experience', label: 'Experience' },
-    { id: 'projects', label: 'Projects' },
-    ...(isViewMode ? [] : [{ id: 'settings', label: 'Settings' }])
-  ];
-
-  const colorSchemes = ['blue', 'green', 'purple', 'orange', 'red', 'teal', 'cyan', 'pink'];
-
-  // Handle functions
-  const handleAboutSubmit = (field, value) => {
-    setProfileData(prev => ({
-      ...prev,
-      about: {
-        ...prev.about,
-        [field]: value
-      }
-    }));
-    showToast('About section updated');
+  const defaultProfileData = {
+    // Define a sensible default structure to prevent errors if API call fails
+    about: { intro: "", experience: "", quote: "" },
+    avatar: "",
+    email: "",
+    experience: [],
+    firstName: "",
+    lastName: "",
+    projects: [],
+    settings: { profileVisibility: "public", emailNotifications: {} },
+    skills: [],
+    username: "",
   };
 
-  const handleAddSkillCategory = () => {
-    setProfileData(prev => ({
-      ...prev,
-      skills: [
-        ...prev.skills,
-        {
-          category: 'New Category',
-          skills: [],
-          colorScheme: colorSchemes[Math.floor(Math.random() * colorSchemes.length)]
+  const [profileData, setProfileData] = useState(defaultProfileData);
+
+  // Calculate profile completion
+  const calculateProfileCompletion = (data) => {
+    // Your existing logic for calculating profile completion
+    let completedFields = 0;
+    let totalFields = 0;
+
+    if (data.firstName) completedFields++;
+    totalFields++;
+    if (data.lastName) completedFields++;
+    totalFields++;
+    if (data.username) completedFields++;
+    totalFields++;
+    if (data.email) completedFields++;
+    totalFields++;
+    if (data.about?.intro) completedFields++;
+    totalFields++;
+    if (data.about?.experience) completedFields++;
+    totalFields++;
+    if (data.skills?.length > 0) completedFields++;
+    totalFields++;
+    if (data.experience?.length > 0) completedFields++;
+    totalFields++;
+    if (data.projects?.length > 0) completedFields++;
+    totalFields++;
+    if (data.avatar) completedFields++;
+    totalFields++;
+
+    const completionPercentage = totalFields > 0 ? (completedFields / totalFields) * 100 : 0;
+    setProfileCompletion(completionPercentage);
+  };
+
+  // Save profile data to backend
+  const saveProfileData = async (updatedData) => {
+    try {
+      setIsSaving(true);
+      // Retrieve the token from localStorage or sessionStorage
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+      if (!token) {
+        // If no token is found, prevent the request and inform the user
+        showToast('Authentication required to save profile.', 'error');
+        setIsSaving(false);
+        return;
+      }
+
+      const response = await axios.put(`/api/users/${userId}`, updatedData, {
+        headers: {
+          Authorization: `Bearer ${token}` // <--- ADD THIS LINE
         }
-      ]
-    }));
-    setEditCategoryIndex(profileData.skills.length);
-    showToast('New skill category added');
+      });
+
+      // ... (rest of your existing code for handling successful response)
+      const data = {
+        ...defaultProfileData,
+        ...response.data,
+        about: {
+          ...defaultProfileData.about,
+          ...response.data.about
+        },
+        settings: {
+          ...defaultProfileData.settings,
+          ...response.data.settings,
+          emailNotifications: {
+            ...defaultProfileData.settings.emailNotifications,
+            ...(response.data.settings?.emailNotifications || {})
+          }
+        }
+      };
+      setProfileData(data); // Update local state with data from backend response
+      calculateProfileCompletion(data); // Recalculate completion
+      showToast('Profile updated');
+      return data;
+
+    } catch (error) {
+      console.log(error.config.url);
+      console.log('Making request to:', `/api/users/${userId}`);
+      console.log('With data:', updatedData);
+      showToast(error.response?.data?.message || 'Could not save profile data', 'error');
+      throw error;
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleUpdateSkillCategory = (index, field, value) => {
-    const updatedSkills = [...profileData.skills];
-    updatedSkills[index] = {
-      ...updatedSkills[index],
-      [field]: value
-    };
-    setProfileData(prev => ({
-      ...prev,
-      skills: updatedSkills
-    }));
-  };
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        // Get token from localStorage or wherever you store it
+        const token = localStorage.getItem('token'); // or however you store the token
 
-  const handleAddSkill = (categoryIndex) => {
-    if (newSkill.trim() === '') return;
+        console.log('Making request to:', `http://localhost:5000/api/users/${userId}`);
+        console.log('With token:', token ? 'Token exists' : 'No token');
 
-    const updatedSkills = [...profileData.skills];
-    updatedSkills[categoryIndex].skills.push(newSkill.trim());
+        const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // Make sure token is included
+          }
+        });
 
-    setProfileData(prev => ({
-      ...prev,
-      skills: updatedSkills
-    }));
-    setNewSkill('');
-    showToast('Skill added');
-  };
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
 
-  const handleRemoveSkill = (categoryIndex, skillIndex) => {
-    const updatedSkills = [...profileData.skills];
-    updatedSkills[categoryIndex].skills.splice(skillIndex, 1);
+        // Check if response is ok
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Error response:', errorText);
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-    setProfileData(prev => ({
-      ...prev,
-      skills: updatedSkills
-    }));
-    showToast('Skill removed', 'info');
-  };
+        // Check content type
+        const contentType = response.headers.get('content-type');
+        console.log('Content-Type:', contentType);
 
-  const handleRemoveCategory = (categoryIndex) => {
-    const updatedSkills = [...profileData.skills];
-    updatedSkills.splice(categoryIndex, 1);
+        if (!contentType || !contentType.includes('application/json')) {
+          const textResponse = await response.text();
+          console.error('Non-JSON response:', textResponse);
+          throw new Error('Server returned non-JSON response');
+        }
 
-    setProfileData(prev => ({
-      ...prev,
-      skills: updatedSkills
-    }));
-    setEditCategoryIndex(null);
-    showToast('Category removed', 'info');
-  };
+        const data = await response.json();
+        console.log('Received data:', data);
+        console.log('Received data about:', data.about);
 
-  const handleSettingsChange = (field, value) => {
-    setProfileData(prev => ({
-      ...prev,
-      settings: {
-        ...prev.settings,
-        [field]: value
+        // --- THE CRUCIAL CHANGE IS HERE ---
+        // Merge fetched data with defaultProfileData to ensure all fields exist
+        const mergedData = {
+          ...defaultProfileData,
+          ...data,
+          about: {
+            ...defaultProfileData.about,
+            ...data.about
+          },
+          settings: {
+            ...defaultProfileData.settings,
+            ...data.settings,
+            emailNotifications: {
+              ...defaultProfileData.settings.emailNotifications,
+              ...(data.settings?.emailNotifications || {})
+            }
+          }
+        };
+        setProfileData(mergedData); // Update the state with the fetched and merged data
+        calculateProfileCompletion(mergedData); // Recalculate completion based on fetched data
+        // --- END OF CRUCIAL CHANGE ---
+
+      } catch (error) {
+        console.error('Fetch error:', error);
+        showToast('Failed to load profile data.', 'error');
+        // Optionally, reset to defaultProfileData on error
+        setProfileData(defaultProfileData);
+      } finally {
+        setIsLoading(false);
       }
-    }));
-  };
+    };
 
-  const toggleEditMode = (section) => {
-    setEditMode(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
+    if (userId) { // Only fetch if userId is available
+      fetchUserData();
+    } else {
+      setIsLoading(false); // If no userId, stop loading and show default
+      setProfileData(defaultProfileData);
+      toast({
+        title: 'User ID Missing',
+        description: 'No user ID provided to fetch profile.',
+        status: 'info',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  }, [userId, toast]); // Dependency array: re-run if userId or toast changes
 
   const showToast = (title, status = 'success') => {
     toast({
@@ -232,11 +243,205 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
     });
   };
 
+  // Handle section updates for 'about'
+  const handleAboutSubmit = async (field, value) => {
+    const updatedData = {
+      ...profileData,
+      about: {
+        ...profileData.about,
+        [field]: value
+      }
+    };
+    await saveProfileData(updatedData); // Call saveProfileData to persist changes
+  };
+
+  const tabs = [
+    { id: 'about', label: 'About' },
+    { id: 'skills', label: 'Skills' },
+    { id: 'experience', label: 'Experience' },
+    { id: 'projects', label: 'Projects' },
+    ...(isViewMode ? [] : [{ id: 'settings', label: 'Settings' }])
+  ];
+
+  const handleAddSkillCategory = async () => {
+    const colorSchemes = ['blue', 'green', 'purple', 'orange', 'red', 'teal', 'cyan', 'pink'];
+    const updatedData = {
+      ...profileData,
+      skills: [
+        ...profileData.skills,
+        {
+          category: 'New Category',
+          skills: [],
+          colorScheme: colorSchemes[Math.floor(Math.random() * colorSchemes.length)]
+        }
+      ]
+    };
+    const savedData = await saveProfileData(updatedData); // Call saveProfileData
+    setEditCategoryIndex(savedData.skills.length - 1);
+  };
+
+  const handleUpdateSkillCategory = async (index, field, value) => {
+    const updatedSkills = [...profileData.skills];
+    updatedSkills[index] = {
+      ...updatedSkills[index],
+      [field]: value
+    };
+    await saveProfileData({ // Call saveProfileData
+      ...profileData,
+      skills: updatedSkills
+    });
+  };
+
+  const handleAddSkill = async (categoryIndex) => {
+    if (newSkill.trim() === '') return;
+
+    const updatedSkills = [...profileData.skills];
+    updatedSkills[categoryIndex].skills.push(newSkill.trim());
+
+    await saveProfileData({ // Call saveProfileData
+      ...profileData,
+      skills: updatedSkills
+    });
+    setNewSkill('');
+  };
+
+  const handleRemoveSkill = async (categoryIndex, skillIndex) => {
+    const updatedSkills = [...profileData.skills];
+    updatedSkills[categoryIndex].skills.splice(skillIndex, 1);
+    await saveProfileData({ // Call saveProfileData
+      ...profileData,
+      skills: updatedSkills
+    });
+  };
+
+  const handleRemoveCategory = async (categoryIndex) => {
+    const updatedSkills = [...profileData.skills];
+    updatedSkills.splice(categoryIndex, 1);
+    await saveProfileData({ // Call saveProfileData
+      ...profileData,
+      skills: updatedSkills
+    });
+    setEditCategoryIndex(null);
+  };
+
+  const handleAddExperience = async () => {
+    const updatedData = {
+      ...profileData,
+      experience: [
+        ...profileData.experience,
+        {
+          title: 'New Position',
+          company: 'Company Name',
+          period: 'YYYY - Present',
+          description: 'Description of your role and achievements.'
+        }
+      ]
+    };
+    await saveProfileData(updatedData); // Call saveProfileData
+  };
+
+  const handleUpdateExperience = async (index, field, value) => {
+    const updatedExperience = [...profileData.experience];
+    updatedExperience[index] = {
+      ...updatedExperience[index],
+      [field]: value
+    };
+    await saveProfileData({ // Call saveProfileData
+      ...profileData,
+      experience: updatedExperience
+    });
+  };
+
+  const handleRemoveExperience = async (index) => {
+    const updatedExperience = [...profileData.experience];
+    updatedExperience.splice(index, 1);
+    await saveProfileData({ // Call saveProfileData
+      ...profileData,
+      experience: updatedExperience
+    });
+  };
+
+  const handleAddProject = async () => {
+    const updatedData = {
+      ...profileData,
+      projects: [
+        ...profileData.projects,
+        {
+          name: 'New Project',
+          tech: 'Technologies used',
+          description: 'Project description and details.'
+        }
+      ]
+    };
+    await saveProfileData(updatedData); // Call saveProfileData
+  };
+
+  const handleUpdateProject = async (index, field, value) => {
+    const updatedProjects = [...profileData.projects];
+    updatedProjects[index] = {
+      ...updatedProjects[index],
+      [field]: value
+    };
+    await saveProfileData({ // Call saveProfileData
+      ...profileData,
+      projects: updatedProjects
+    });
+  };
+
+  const handleRemoveProject = async (index) => {
+    const updatedProjects = [...profileData.projects];
+    updatedProjects.splice(index, 1);
+    await saveProfileData({ // Call saveProfileData
+      ...profileData,
+      projects: updatedProjects
+    });
+  };
+
+  // Changed handleSettingsChange to immediately save (Option 1 from previous response)
+  const handleSettingsChange = async (field, value) => {
+    // If 'email' or 'username' are top-level fields, update profileData directly
+    if (field === 'email' || field === 'username') {
+      await saveProfileData({
+        ...profileData,
+        [field]: value
+      });
+    } else {
+      // Otherwise, update within the settings object
+      const updatedData = {
+        ...profileData,
+        settings: {
+          ...profileData.settings,
+          [field]: value
+        }
+      };
+      await saveProfileData(updatedData); // Call saveProfileData
+    }
+  };
+
+
+  const toggleEditMode = (section) => {
+    setEditMode(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  if (isLoading) {
+    return (
+      <Flex justify="center" align="center" minH="100vh">
+        <Spinner size="xl" />
+      </Flex>
+    );
+  }
+  // No need for this check if defaultProfileData is set and isLoading handles initial state
+  // if (!profileData) return null;
+
   const renderContent = () => {
     switch (activeTab) {
       case 'about':
         return (
           <VStack align="start" spacing={8}>
+            {/* About section header */}
             <Flex justify="space-between" w="full" align="center">
               <Box>
                 <Heading size="lg" color="gray.800" mb={4} fontWeight="semibold">
@@ -258,27 +463,30 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
             </Flex>
 
             <VStack align="start" spacing={6} color="gray.600">
-              <Flex align="flex-start" >
+              <Flex align="flex-start">
                 <Box>
-                  <Flex direction="column" align="center" gap={2} my={5} width="30vw" >
+                  <Flex direction="column" align="center" gap={2} my={5} width="30vw">
                     <Avatar
-                      size="xl">
-                    </Avatar>
+                      size="xl"
+                      src={profileData.avatar}
+                      name={`${profileData.firstName} ${profileData.lastName}`}
+                    />
                     <Heading fontWeight="">
-                      Sai Charan
+                      {profileData.firstName} {profileData.lastName}
                     </Heading>
                     <Text align="center">
-                      FullStack Development | Gen AI |
+                      {/* Assuming 'Hai' was a placeholder, replaced with a more dynamic field or removed */}
+                      {profileData.about?.quote || ''}
                     </Text>
                   </Flex>
                 </Box>
                 <Box>
                   <Editable
                     p={5}
-                    defaultValue={profileData.about.intro}
+                    defaultValue={profileData.about?.intro || ''}
                     isPreviewFocusable={editMode.about && !isViewMode}
                     submitOnBlur={editMode.about && !isViewMode}
-                    onSubmit={(value) => handleAboutSubmit('intro', value)}
+                    onSubmit={(value) => handleAboutSubmit('intro', value)} // Calls handleAboutSubmit
                     isDisabled={!editMode.about || isViewMode}
                   >
                     <EditablePreview
@@ -293,21 +501,20 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                     />
                     {(editMode.about && !isViewMode) && (
                       <EditableTextarea
-
                         autoresize
                         fontSize="md"
                         lineHeight="1.7"
-                        w="33vw"  // Added minimum height
-                        p={4}         // Added padding
+                        w="33vw"
+                        p={4}
                       />
                     )}
                   </Editable>
                   <Editable
                     p={5}
-                    defaultValue={profileData.about.experience}
+                    defaultValue={profileData.about?.experience || ''}
                     isPreviewFocusable={editMode.about && !isViewMode}
                     submitOnBlur={editMode.about && !isViewMode}
-                    onSubmit={(value) => handleAboutSubmit('experience', value)}
+                    onSubmit={(value) => handleAboutSubmit('experience', value)} // Calls handleAboutSubmit
                     isDisabled={!editMode.about || isViewMode}
                   >
                     <EditablePreview
@@ -327,7 +534,6 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                 </Box>
               </Flex>
 
-
               <Box
                 mt={8}
                 p={6}
@@ -338,10 +544,10 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                 w="full"
               >
                 <Editable
-                  defaultValue={profileData.about.quote}
+                  defaultValue={profileData.about?.quote || ''}
                   isPreviewFocusable={editMode.about && !isViewMode}
                   submitOnBlur={editMode.about && !isViewMode}
-                  onSubmit={(value) => handleAboutSubmit('quote', value)}
+                  onSubmit={(value) => handleAboutSubmit('quote', value)} // Calls handleAboutSubmit
                   isDisabled={!editMode.about || isViewMode}
                 >
                   <EditablePreview
@@ -388,7 +594,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                     <Button
                       leftIcon={<AddIcon />}
                       size="sm"
-                      onClick={handleAddSkillCategory}
+                      onClick={handleAddSkillCategory} // Calls handleAddSkillCategory
                       colorScheme="blue"
                     >
                       Add Category
@@ -406,7 +612,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                       {editCategoryIndex === index && editMode.skills && !isViewMode ? (
                         <Input
                           value={category.category}
-                          onChange={(e) => handleUpdateSkillCategory(index, 'category', e.target.value)}
+                          onChange={(e) => handleUpdateSkillCategory(index, 'category', e.target.value)} // Calls handleUpdateSkillCategory
                           onBlur={() => setEditCategoryIndex(null)}
                           autoFocus
                           variant="flushed"
@@ -440,7 +646,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                             size="sm"
                             variant="ghost"
                             colorScheme="red"
-                            onClick={() => handleRemoveCategory(index)}
+                            onClick={() => handleRemoveCategory(index)} // Calls handleRemoveCategory
                           />
                         </HStack>
                       )}
@@ -482,7 +688,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                                 h="20px"
                                 w="20px"
                                 flexShrink={0}
-                                onClick={() => handleRemoveSkill(index, skillIndex)}
+                                onClick={() => handleRemoveSkill(index, skillIndex)} // Calls handleRemoveSkill
                               />
                             )}
                           </Flex>
@@ -505,7 +711,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                               size="sm"
                               borderRadius="md"
                               colorScheme="blue"
-                              onClick={() => handleAddSkill(index)}
+                              onClick={() => handleAddSkill(index)} // Calls handleAddSkill
                               flexShrink={0}
                             >
                               Add
@@ -554,21 +760,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                     <Button
                       leftIcon={<AddIcon />}
                       size="sm"
-                      onClick={() => {
-                        setProfileData(prev => ({
-                          ...prev,
-                          experience: [
-                            ...prev.experience,
-                            {
-                              title: 'New Position',
-                              company: 'Company Name',
-                              period: 'YYYY - Present',
-                              description: 'Description of your role and achievements.'
-                            }
-                          ]
-                        }));
-                        showToast('New experience added');
-                      }}
+                      onClick={handleAddExperience} // Calls handleAddExperience
                       colorScheme="blue"
                     >
                       Add Experience
@@ -604,11 +796,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                         fontSize="larger"
                         fontWeight="bold"
                         defaultValue={job.title}
-                        onSubmit={(value) => {
-                          const updatedExp = [...profileData.experience];
-                          updatedExp[index].title = value;
-                          setProfileData(prev => ({ ...prev, experience: updatedExp }));
-                        }}
+                        onSubmit={(value) => handleUpdateExperience(index, 'title', value)} // Calls handleUpdateExperience
                         isDisabled={!editMode.experience || isViewMode}
                       >
                         <EditablePreview as={Heading} size="md" color="gray.800" />
@@ -621,11 +809,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                           size="sm"
                           variant="ghost"
                           colorScheme="red"
-                          onClick={() => {
-                            const updatedExp = [...profileData.experience];
-                            updatedExp.splice(index, 1);
-                            setProfileData(prev => ({ ...prev, experience: updatedExp }));
-                          }}
+                          onClick={() => handleRemoveExperience(index)} // Calls handleRemoveExperience
                         />
                       )}
                     </Flex>
@@ -633,11 +817,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                     <Flex wrap="wrap" gap={2}>
                       <Editable
                         defaultValue={job.company}
-                        onSubmit={(value) => {
-                          const updatedExp = [...profileData.experience];
-                          updatedExp[index].company = value;
-                          setProfileData(prev => ({ ...prev, experience: updatedExp }));
-                        }}
+                        onSubmit={(value) => handleUpdateExperience(index, 'company', value)} // Calls handleUpdateExperience
                         isDisabled={!editMode.experience || isViewMode}
                       >
                         <EditablePreview fontWeight="medium" />
@@ -646,11 +826,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                       <Text>•</Text>
                       <Editable
                         defaultValue={job.period}
-                        onSubmit={(value) => {
-                          const updatedExp = [...profileData.experience];
-                          updatedExp[index].period = value;
-                          setProfileData(prev => ({ ...prev, experience: updatedExp }));
-                        }}
+                        onSubmit={(value) => handleUpdateExperience(index, 'period', value)} // Calls handleUpdateExperience
                         isDisabled={!editMode.experience || isViewMode}
                       >
                         <EditablePreview fontWeight="medium" />
@@ -660,11 +836,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
 
                     <Editable
                       defaultValue={job.description}
-                      onSubmit={(value) => {
-                        const updatedExp = [...profileData.experience];
-                        updatedExp[index].description = value;
-                        setProfileData(prev => ({ ...prev, experience: updatedExp }));
-                      }}
+                      onSubmit={(value) => handleUpdateExperience(index, 'description', value)} // Calls handleUpdateExperience
                       w="full"
                       isDisabled={!editMode.experience || isViewMode}
                     >
@@ -712,20 +884,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                     <Button
                       leftIcon={<AddIcon />}
                       size="sm"
-                      onClick={() => {
-                        setProfileData(prev => ({
-                          ...prev,
-                          projects: [
-                            ...prev.projects,
-                            {
-                              name: 'New Project',
-                              tech: 'Technologies used',
-                              description: 'Project description and details.'
-                            }
-                          ]
-                        }));
-                        showToast('New project added');
-                      }}
+                      onClick={handleAddProject} // Calls handleAddProject
                       colorScheme="blue"
                     >
                       Add Project
@@ -760,11 +919,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                       position="absolute"
                       top={2}
                       right={2}
-                      onClick={() => {
-                        const updatedProjects = [...profileData.projects];
-                        updatedProjects.splice(index, 1);
-                        setProfileData(prev => ({ ...prev, projects: updatedProjects }));
-                      }}
+                      onClick={() => handleRemoveProject(index)} // Calls handleRemoveProject
                     />
                   )}
 
@@ -773,11 +928,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                       fontSize="larger"
                       fontWeight="bold"
                       defaultValue={project.name}
-                      onSubmit={(value) => {
-                        const updatedProjects = [...profileData.projects];
-                        updatedProjects[index].name = value;
-                        setProfileData(prev => ({ ...prev, projects: updatedProjects }));
-                      }}
+                      onSubmit={(value) => handleUpdateProject(index, 'name', value)} // Calls handleUpdateProject
                       isDisabled={!editMode.projects || isViewMode}
                     >
                       <EditablePreview as={Heading} size="md" color="gray.800" />
@@ -786,11 +937,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
 
                     <Editable
                       defaultValue={project.tech}
-                      onSubmit={(value) => {
-                        const updatedProjects = [...profileData.projects];
-                        updatedProjects[index].tech = value;
-                        setProfileData(prev => ({ ...prev, projects: updatedProjects }));
-                      }}
+                      onSubmit={(value) => handleUpdateProject(index, 'tech', value)} // Calls handleUpdateProject
                       isDisabled={!editMode.projects || isViewMode}
                     >
                       <EditablePreview fontSize="sm" color="gray.600" fontWeight="medium" />
@@ -799,11 +946,7 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
 
                     <Editable
                       defaultValue={project.description}
-                      onSubmit={(value) => {
-                        const updatedProjects = [...profileData.projects];
-                        updatedProjects[index].description = value;
-                        setProfileData(prev => ({ ...prev, projects: updatedProjects }));
-                      }}
+                      onSubmit={(value) => handleUpdateProject(index, 'description', value)} // Calls handleUpdateProject
                       w="full"
                       isDisabled={!editMode.projects || isViewMode}
                     >
@@ -841,8 +984,8 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                 <FormLabel>Email</FormLabel>
                 <Input
                   type="email"
-                  value={profileData.settings.email}
-                  onChange={(e) => handleSettingsChange('email', e.target.value)}
+                  value={profileData.email} // Access email from top-level profileData
+                  onChange={(e) => handleSettingsChange('email', e.target.value)} // Calls handleSettingsChange
                   isDisabled={isViewMode}
                 />
               </FormControl>
@@ -850,8 +993,8 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
               <FormControl>
                 <FormLabel>Username</FormLabel>
                 <Input
-                  value={profileData.settings.username}
-                  onChange={(e) => handleSettingsChange('username', e.target.value)}
+                  value={profileData.username} // Access username from top-level profileData
+                  onChange={(e) => handleSettingsChange('username', e.target.value)} // Calls handleSettingsChange
                   isDisabled={isViewMode}
                 />
               </FormControl>
@@ -862,23 +1005,25 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                   type="password"
                   placeholder="Enter new password"
                   isDisabled={isViewMode}
+                // Note: Password changes should ideally be a separate, secure process
+                // This input is just for demonstration, not actually hooked up to backend password change
                 />
               </FormControl>
 
-
-
-              {!isViewMode && (
+              {/* Removing "Save Settings" button as changes are saved on input change (Option 1) */}
+              {/* {!isViewMode && (
                 <Button
                   colorScheme="blue"
                   mt={8}
                   onClick={() => {
-                    toggleEditMode('settings');
+                    // No explicit save needed here if handleSettingsChange saves immediately
+                    toggleEditMode('settings'); // This might be used to exit edit mode
                     showToast('Settings saved');
                   }}
                 >
                   Save Settings
                 </Button>
-              )}
+              )} */}
             </VStack>
           </VStack>
         );
@@ -886,9 +1031,30 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
         return null;
     }
   };
-
+  // Add Progress Bar at the top of the component
   return (
-    <Box minH="100vh"   marginTop="-4vh" width="83vw" >
+    <Box minH="100vh" marginTop="-4vh" width="83vw">
+      {/* Profile Completion Progress Bar */}
+      <Box px={6} py={4} bg="white" borderBottom="1px" borderColor="gray.200">
+        <Flex align="center">
+          <Text fontSize="sm" fontWeight="medium" mr={3}>
+            Profile Completion: {profileCompletion}%
+          </Text>
+          <Progress
+            value={profileCompletion}
+            size="sm"
+            width="200px"
+            colorScheme={profileCompletion >= 70 ? 'green' : profileCompletion >= 40 ? 'yellow' : 'red'}
+            borderRadius="md"
+          />
+          <Tooltip label="Complete your profile to increase visibility">
+            <Text ml={2} fontSize="xs" color="gray.500">
+              {profileCompletion < 50 ? 'Keep going!' : profileCompletion < 80 ? 'Looking good!' : 'Excellent!'}
+            </Text>
+          </Tooltip>
+        </Flex>
+      </Box>
+
       {/* Navigation */}
       <Box
         position="sticky"
@@ -908,14 +1074,13 @@ const ProfileScrollPage = ({ isViewMode = false }) => {
                   variant="ghost"
                   onClick={() => {
                     setActiveTab(tab.id);
-                    // Reset edit mode when switching tabs
-                    setEditMode(() => ({
+                    setEditMode({
                       about: false,
                       skills: false,
                       experience: false,
                       projects: false,
                       settings: false
-                    }));
+                    });
                   }}
                   color={activeTab === tab.id ? 'gray.800' : 'gray.600'}
                   fontWeight={activeTab === tab.id ? 'semibold' : 'normal'}

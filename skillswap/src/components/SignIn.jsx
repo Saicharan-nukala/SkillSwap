@@ -48,21 +48,21 @@ export default function SignIn({ onLogin }) {
 
       const data = await response.json();
 
-      if (!response.ok) {
+      if (response.ok) {
+        if (data.requiresVerification) {
+          navigate(`/verify-otp?userId=${data.userId}`);
+        } else {
+          // Store the user object from response.data.data
+          localStorage.setItem('user', JSON.stringify(data.data));
+          // *** ADDED LINE HERE ***
+          localStorage.setItem('token', data.token); // Store the JWT token
+          console.log("Token : - ",data.token);
+          onLogin(); // Call onLogin to update authentication state in App.jsx
+          navigate('/my-profile');
+        }
+      } else {
         throw new Error(data.message || 'Login failed');
       }
-
-      if (data.requiresVerification) {
-        navigate(`/verify-otp?userId=${data.userId}`);
-        return;
-      }
-
-      // Store user data
-      const storage = formData.rememberMe ? localStorage : sessionStorage;
-      storage.setItem('user', JSON.stringify(data.data));
-
-      onLogin(); // Update global auth state
-      navigate('/profile');
     } catch (error) {
       toast({
         title: 'Login failed',
@@ -108,10 +108,16 @@ export default function SignIn({ onLogin }) {
               colorScheme="blue"
               mt={4}
             >
-              Sign in
+              Sign In
             </Button>
           </Stack>
         </form>
+        <Text mt={4} textAlign="center">
+          Don't have an account?{' '}
+          <Button variant="link" colorScheme="blue" onClick={() => navigate('/signup')}>
+            Sign Up
+          </Button>
+        </Text>
       </Box>
     </Flex>
   );
