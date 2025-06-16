@@ -1,5 +1,5 @@
-'use client'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Flex,
   Box,
@@ -11,98 +11,108 @@ import {
   Button,
   Heading,
   Text,
-  useColorModeValue,
-} from '@chakra-ui/react'
+  useToast,
+} from '@chakra-ui/react';
 
-export default function SignIn() {
+export default function SignIn({ onLogin }) {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    rememberMe: false,
+  });
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const toast = useToast();
 
-  const handleProfile = () => {
-    navigate('/profile');
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      if (data.requiresVerification) {
+        navigate(`/verify-otp?userId=${data.userId}`);
+        return;
+      }
+
+      // Store user data
+      const storage = formData.rememberMe ? localStorage : sessionStorage;
+      storage.setItem('user', JSON.stringify(data.data));
+
+      onLogin(); // Update global auth state
+      navigate('/profile');
+    } catch (error) {
+      toast({
+        title: 'Login failed',
+        description: error.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <Flex
-      minH={'100vh'}
-      align={'center'}
-      justify={'center'}
-      bg={useColorModeValue('gray.50', 'gray.800')}>
-      <Stack spacing={8} mx={'auto'} maxW={'lg'} py={12} px={6}>
-        <Stack align={'center'}>
-          <Heading fontSize={'4xl'} color="gray.800">Sign in to your account</Heading>
-        </Stack>
-        <Box
-          rounded={'lg'}
-          bg={useColorModeValue('white', 'gray.700')}
-          boxShadow={'lg'}
-          p={8}>
+    <Flex minH="100vh" align="center" justify="center" bg="gray.50">
+      <Box rounded="lg" bg="white" boxShadow="lg" p={8} maxW="md" w="full">
+        <Heading mb={6} textAlign="center" fontSize="2xl">
+          Sign in to your account
+        </Heading>
+        <form onSubmit={handleSubmit}>
           <Stack spacing={4}>
             <FormControl id="email">
-              <FormLabel color="gray.600">Email address</FormLabel>
-              <Input 
+              <FormLabel>Email address</FormLabel>
+              <Input
                 type="email"
-                bg="white"
-                borderColor="gray.300"
-                _hover={{
-                  borderColor: 'primary.300'
-                }}
-                _focus={{
-                  borderColor: 'primary.500',
-                  boxShadow: '0 0 0 1px primary.500'
-                }}
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
               />
             </FormControl>
             <FormControl id="password">
-              <FormLabel color="gray.600">Password</FormLabel>
-              <Input 
+              <FormLabel>Password</FormLabel>
+              <Input
                 type="password"
-                bg="white"
-                borderColor="gray.300"
-                _hover={{
-                  borderColor: 'primary.300'
-                }}
-                _focus={{
-                  borderColor: 'primary.500',
-                  boxShadow: '0 0 0 1px primary.500'
-                }}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
               />
             </FormControl>
-            <Stack spacing={10}>
-              <Stack
-                direction={{ base: 'column', sm: 'row' }}
-                align={'start'}
-                justify={'space-between'}>
-                <Checkbox color="gray.600">Remember me</Checkbox>
-                <Text 
-                  color={'primary.500'}
-                  _hover={{
-                    color: 'primary.600',
-                    textDecoration: 'underline'
-                  }}
-                  cursor="pointer">
-                  Forgot password?
-                </Text>
-              </Stack>
-              <Button
-                bg={'primary.500'}
-                color={'white'}
-                fontWeight="medium"
-                borderRadius="md"
-                onClick={handleProfile}
-                _hover={{
-                  bg: 'primary.600',
-                  transform: 'translateY(-1px)',
-                  boxShadow: 'md'
-                }}
-                _active={{
-                  bg: 'primary.700',
-                  transform: 'translateY(0)'
-                }}>
-                Sign in
-              </Button>
-            </Stack>
+            <Button
+              type="submit"
+              isLoading={isLoading}
+              colorScheme="blue"
+              mt={4}
+            >
+              Sign in
+            </Button>
           </Stack>
-        </Box>
-      </Stack>
+        </form>
+      </Box>
     </Flex>
-  )
+  );
 }

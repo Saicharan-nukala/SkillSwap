@@ -1,160 +1,139 @@
-'use client'
-
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Flex,
   Box,
   FormControl,
   FormLabel,
   Input,
-  InputGroup,
-  HStack,
-  InputRightElement,
-  Stack,
   Button,
   Heading,
-  Text,
-  useColorModeValue,
-  Link,
-} from '@chakra-ui/react'
-import { useState } from 'react'
-import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons'
+  useToast,
+  Stack
+} from '@chakra-ui/react';
 
 export default function SignUp() {
-  const [showPassword, setShowPassword] = useState(false)
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const toast = useToast();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    // Validate all fields are filled
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
+      toast({
+        title: 'Error',
+        description: 'Please fill all required fields',
+        status: 'error',
+        duration: 5000,
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
+      }
+
+      toast({
+        title: 'Check your email!',
+        description: 'We sent a 6-digit OTP to verify your account.',
+        status: 'success',
+        duration: 5000,
+      });
+
+      navigate(`/verify-otp?userId=${data.data.userId}`); // Note the change to data.data.userId
+    } catch (error) {
+      toast({
+        title: 'Registration failed',
+        description: error.message,
+        status: 'error',
+        duration: 5000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <Flex
-      minH={'100vh'}
-      align={'center'}
-      justify={'center'}
-      bg={useColorModeValue('gray.50', 'gray.800')}>
-      <Stack spacing={8} mx={'auto'} maxW={'lg'} py={12} px={6}>
-        <Stack align={'center'}>
-          <Heading fontSize={'4xl'} textAlign={'center'} color="gray.800">
-            Sign up
-          </Heading>
-        </Stack>
-        <Box
-          rounded={'lg'}
-          bg={useColorModeValue('white', 'gray.700')}
-          boxShadow={'lg'}
-          p={8}>
+    <Flex minH="100vh" align="center" justify="center" bg="gray.50">
+      <Box rounded="lg" bg="white" boxShadow="lg" p={8} maxW="md" w="full">
+        <Heading mb={6} textAlign="center" fontSize="2xl">
+          Create your account
+        </Heading>
+        <form onSubmit={handleSubmit}>
           <Stack spacing={4}>
-            <HStack>
-              <Box>
-                <FormControl id="firstName" isRequired>
-                  <FormLabel color="gray.600">First Name</FormLabel>
-                  <Input 
-                    type="text"
-                    bg="white"
-                    borderColor="gray.300"
-                    _hover={{
-                      borderColor: 'primary.300'
-                    }}
-                    _focus={{
-                      borderColor: 'primary.500',
-                      boxShadow: '0 0 0 1px primary.500'
-                    }}
-                  />
-                </FormControl>
-              </Box>
-              <Box>
-                <FormControl id="lastName">
-                  <FormLabel color="gray.600">Last Name</FormLabel>
-                  <Input 
-                    type="text"
-                    bg="white"
-                    borderColor="gray.300"
-                    _hover={{
-                      borderColor: 'primary.300'
-                    }}
-                    _focus={{
-                      borderColor: 'primary.500',
-                      boxShadow: '0 0 0 1px primary.500'
-                    }}
-                  />
-                </FormControl>
-              </Box>
-            </HStack>
+            <FormControl id="firstName" isRequired>
+              <FormLabel>First name</FormLabel>
+              <Input
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+              />
+            </FormControl>
+            <FormControl id="lastName" isRequired>
+              <FormLabel>Last name</FormLabel>
+              <Input
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+              />
+            </FormControl>
             <FormControl id="email" isRequired>
-              <FormLabel color="gray.600">Email address</FormLabel>
-              <Input 
+              <FormLabel>Email</FormLabel>
+              <Input
                 type="email"
-                bg="white"
-                borderColor="gray.300"
-                _hover={{
-                  borderColor: 'primary.300'
-                }}
-                _focus={{
-                  borderColor: 'primary.500',
-                  boxShadow: '0 0 0 1px primary.500'
-                }}
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
               />
             </FormControl>
             <FormControl id="password" isRequired>
-              <FormLabel color="gray.600">Password</FormLabel>
-              <InputGroup>
-                <Input 
-                  type={showPassword ? 'text' : 'password'}
-                  bg="white"
-                  borderColor="gray.300"
-                  _hover={{
-                    borderColor: 'primary.300'
-                  }}
-                  _focus={{
-                    borderColor: 'primary.500',
-                    boxShadow: '0 0 0 1px primary.500'
-                  }}
-                />
-                <InputRightElement h={'full'}>
-                  <Button
-                    variant={'ghost'}
-                    color="gray.500"
-                    _hover={{
-                      color: 'primary.500'
-                    }}
-                    onClick={() => setShowPassword((showPassword) => !showPassword)}>
-                    {showPassword ? <ViewIcon /> : <ViewOffIcon />}
-                  </Button>
-                </InputRightElement>
-              </InputGroup>
+              <FormLabel>Password</FormLabel>
+              <Input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                minLength="6"
+              />
             </FormControl>
-            <Stack spacing={10} pt={2}>
-              <Button
-                loadingText="Submitting"
-                size="lg"
-                bg={'primary.500'}
-                color={'white'}
-                fontWeight="medium"
-                borderRadius="md"
-                _hover={{
-                  bg: 'primary.600',
-                  transform: 'translateY(-1px)',
-                  boxShadow: 'md'
-                }}
-                _active={{
-                  bg: 'primary.700',
-                  transform: 'translateY(0)'
-                }}>
-                Sign up
-              </Button>
-            </Stack>
-            <Stack pt={6}>
-              <Text align={'center'} color="gray.600">
-                Already a user?{' '}
-                <Link 
-                  color={'primary.500'}
-                  _hover={{
-                    color: 'primary.600',
-                    textDecoration: 'underline'
-                  }}>
-                  SignIn
-                </Link>
-              </Text>
-            </Stack>
+            <Button
+              type="submit"
+              isLoading={isLoading}
+              colorScheme="blue"
+              mt={4}
+              w="full"
+            >
+              Sign up
+            </Button>
           </Stack>
-        </Box>
-      </Stack>
+        </form>
+      </Box>
     </Flex>
-  )
+  );
 }

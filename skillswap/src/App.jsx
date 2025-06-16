@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import DisplayPage from './components/DisplayPage';
 import SignUp from './components/SignUp';
 import SignIn from './components/SignIn';
+import VerifyOTP from './components/VerifyOTP';
 import MainPage from './components/MainPage';
 import ProfilePage from './components/ProfilePage';
 import Dashboard from './components/Dashboard';
@@ -15,54 +16,56 @@ import Chats from './components/Chats';
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // Check for existing auth state on app load
+  useEffect(() => {
+    const user = localStorage.getItem('user') || sessionStorage.getItem('user');
+    if (user) setIsAuthenticated(true);
+  }, []);
+
   const handleLogin = () => {
     setIsAuthenticated(true);
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
     setIsAuthenticated(false);
+  };
+
+  // ProtectedRoute wrapper
+  const ProtectedRoute = ({ children }) => {
+    return isAuthenticated ? children : <Navigate to="/signin" replace />;
   };
 
   return (
     <Router>
-      <div className="App">
-        <Routes>
-          {/* Landing/Display page */}
-          <Route
-            path="/"
-            element={<DisplayPage />}
-          />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<DisplayPage />} />
+        <Route path="/signup" element={<SignUp onLogin={handleLogin} />} />
+        <Route path="/signin" element={<SignIn onLogin={handleLogin} />} />
+        <Route path="/verify-otp" element={<VerifyOTP onVerify={handleLogin} />} />
 
-          {/* Auth pages */}
-          <Route
-            path="/signup"
-            element={<SignUp onLogin={handleLogin} />}
-          />
-          <Route
-            path="/signin"
-            element={<SignIn onLogin={handleLogin} />}
-          />
-
-          {/* Protected main page */}
-          <Route
-            path="/main"
-            element={
-              isAuthenticated ? (
-                <MainPage onLogout={handleLogout} />
-              ) : (
-                <Navigate to="/signin" replace />
-              )
-            }
-          />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/learning" element={<Learnings />} />
-          <Route path="/teaching" element={<Teachings />} />
-          <Route path="/chats" element={<Chats />} />
-          <Route path="/connections" element={<Connections />} />
-          <Route path="/newswaps" element={<NewSwaps />} />
-        </Routes>
-      </div>
+        {/* Protected Routes */}
+        <Route
+          path="/main"
+          element={
+            <ProtectedRoute>
+              <MainPage onLogout={handleLogout} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        {/* Add other protected routes similarly */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </Router>
   );
 }
