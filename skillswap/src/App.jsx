@@ -15,15 +15,55 @@ import Chats from './components/Chats';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true); // NEW: Add loading state for authentication
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
   // Check for existing auth state on app load
   useEffect(() => {
-    const user = localStorage.getItem('user') || sessionStorage.getItem('user');
-    if (user) {
-      setIsAuthenticated(true);
-    }
-    setIsLoadingAuth(false); // Set to false once auth check is complete
+    const checkAuthState = () => {
+      const user = localStorage.getItem('user') || sessionStorage.getItem('user');
+      if (user) {
+        try {
+          // Validate the user data
+          const userData = JSON.parse(user);
+          if (userData && userData.userId) {
+            setIsAuthenticated(true);
+          } else {
+            // Invalid user data, clear it
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('user');
+            setIsAuthenticated(false);
+          }
+        } catch (error) {
+          // Invalid JSON, clear it
+          localStorage.removeItem('user');
+          sessionStorage.removeItem('user');
+          setIsAuthenticated(false);
+          console.log(error)
+        }
+      } else {
+        setIsAuthenticated(false);
+      }
+      setIsLoadingAuth(false);
+    };
+
+    checkAuthState();
+
+    // Listen for storage changes (for cross-tab logout)
+    const handleStorageChange = (e) => {
+      if (e.key === 'user' || e.key === null) {
+        checkAuthState();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom storage events (for same-tab logout)
+    window.addEventListener('storage', checkAuthState);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('storage', checkAuthState);
+    };
   }, []);
 
   const handleLogin = () => {
@@ -31,16 +71,34 @@ function App() {
   };
 
   const handleLogout = () => {
+    // Clear storage
     localStorage.removeItem('user');
     sessionStorage.removeItem('user');
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Update state
     setIsAuthenticated(false);
+    
+    // Dispatch storage event for cross-component communication
+    window.dispatchEvent(new Event('storage'));
   };
 
   // ProtectedRoute wrapper
   const ProtectedRoute = ({ children }) => {
     if (isLoadingAuth) {
       // Show a loading indicator while authenticating
-      return <div>Loading authentication...</div>; // You can use a Chakra UI Spinner here
+      return (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100vh',
+          fontSize: '18px'
+        }}>
+          Loading authentication...
+        </div>
+      );
     }
     return isAuthenticated ? children : <Navigate to="/signin" replace />;
   };
@@ -50,40 +108,127 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<DisplayPage />} />
-        <Route path="/signup" element={<SignUp onLogin={handleLogin} />} />
-        <Route path="/signin" element={<SignIn onLogin={handleLogin} />} />
-        <Route path="/verify-otp" element={<VerifyOTP onVerify={handleLogin} />} />
+        <Route 
+          path="/signup" 
+          element={
+            !isAuthenticated ? (
+              <SignUp onLogin={handleLogin} />
+            ) : (
+              <Navigate to="/dashboard" replace />
+            )
+          } 
+        />
+        <Route 
+          path="/signin" 
+          element={
+            !isAuthenticated ? (
+              <SignIn onLogin={handleLogin} />
+            ) : (
+              <Navigate to="/dashboard" replace />
+            )
+          } 
+        />
+        <Route 
+          path="/verify-otp" 
+          element={
+            !isAuthenticated ? (
+              <VerifyOTP onVerify={handleLogin} />
+            ) : (
+              <Navigate to="/dashboard" replace />
+            )
+          } 
+        />
 
         {/* Protected Routes */}
         <Route
-          path="/main"
+          path="/dashboard"
           element={
             <ProtectedRoute>
-              <MainPage onLogout={handleLogout} />
+              <Dashboard />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/profile/:userId" // UPDATED: Route now expects a userId parameter
+          path="/learning"
+          element={
+            <ProtectedRoute>
+              <Learnings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teaching"
+          element={
+            <ProtectedRoute>
+              <Teachings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/connections"
+          element={
+            <ProtectedRoute>
+              <Connections />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/newswaps"
+          element={
+            <ProtectedRoute>
+              <NewSwaps />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chats"
+          element={
+            <ProtectedRoute>
+              <Chats />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/:userId"
           element={
             <ProtectedRoute>
               <ProfilePage />
             </ProtectedRoute>
           }
         />
-        {/* Optional: Route for "My Profile" that redirects to the current user's profile */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Navigate 
+                to={`/profile/${JSON.parse(localStorage.getItem('user') || '{}')?.userId || 'default'}`} 
+                replace 
+              />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/my-profile"
           element={
             <ProtectedRoute>
-              {/* IMPORTANT: Replace 'user' and '.userId' with your actual localStorage key and property */}
-              {/* This assumes your user object in localStorage has a 'userId' property */}
-              <Navigate to={`/profile/${JSON.parse(localStorage.getItem('user'))?.userId || 'default'}`} replace />
+              <Navigate 
+                to={`/profile/${JSON.parse(localStorage.getItem('user') || '{}')?.userId || 'default'}`} 
+                replace 
+              />
             </ProtectedRoute>
           }
         />
-        {/* Add other protected routes similarly */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Catch all route - redirect to dashboard if authenticated, otherwise to home */}
+        <Route 
+          path="*" 
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } 
+        />
       </Routes>
     </Router>
   );

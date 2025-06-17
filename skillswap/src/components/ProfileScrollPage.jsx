@@ -68,15 +68,9 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
     let completedFields = 0;
     let totalFields = 0;
 
-    if (data.firstName) completedFields++;
-    totalFields++;
-    if (data.lastName) completedFields++;
-    totalFields++;
-    if (data.email) completedFields++;
-    totalFields++;
     if (data.about?.intro) completedFields++;
     totalFields++;
-    if (data.about?.experience) completedFields++;
+    if (data.intrest?.length > 0) completedFields++;
     totalFields++;
     if (data.skills?.length > 0) completedFields++;
     totalFields++;
@@ -250,7 +244,34 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
     };
     await saveProfileData(updatedData); // Call saveProfileData to persist changes
   };
+  const handleInterestSubmit = async (value) => {
+    try {
+      const updatedData = {
+        ...profileData,
+        intrest: value // Using the existing field name from your DB
+      };
 
+      await saveProfileData(updatedData);
+
+      // Optional: Show success feedback
+      toast({
+        title: "Interest updated",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+    } catch (error) {
+      // Handle error if save fails
+      toast({
+        title: "Failed to update interest",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
   const tabs = [
     { id: 'about', label: 'About' },
     { id: 'skills', label: 'Skills' },
@@ -260,7 +281,6 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
   ];
 
   const handleAddSkillCategory = async () => {
-    const colorSchemes = ['blue', 'green', 'purple', 'orange', 'red', 'teal', 'cyan', 'pink'];
     const updatedData = {
       ...profileData,
       skills: [
@@ -268,7 +288,6 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
         {
           category: 'New Category',
           skills: [],
-          colorScheme: colorSchemes[Math.floor(Math.random() * colorSchemes.length)]
         }
       ]
     };
@@ -484,20 +503,45 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
                     <Heading fontWeight="">
                       {profileData.firstName} {profileData.lastName}
                     </Heading>
-                    <Text align="center">
-                      {/* Assuming 'Hai' was a placeholder, replaced with a more dynamic field or removed */}
-                      {profileData.about?.quote || ''}
-                    </Text>
+                    <Editable
+                      p={5}
+                      defaultValue={profileData.intrest || 'please enter intrest'}
+                      isPreviewFocusable={editMode.about && !isViewMode}
+                      submitOnBlur={editMode.about && !isViewMode}
+                      onSubmit={(value) => handleInterestSubmit(value)}// Calls handleAboutSubmit
+                      isDisabled={!editMode.about || isViewMode}
+                    >
+                      <EditablePreview
+                        fontSize="md"
+                        lineHeight="1.7"
+                        {...((editMode.about && !isViewMode) ? {
+                          border: "1px dashed",
+                          borderColor: "gray.300",
+                          p: 2,
+                          borderRadius: "md"
+                        } : {})}
+                      />
+                      {(editMode.about && !isViewMode) && (
+                        <EditableTextarea
+                          autoresize
+                          fontSize="md"
+                          lineHeight="1.7"
+                          w="33vw"
+                          p={4}
+                        />
+                      )}
+                    </Editable>
                   </Flex>
                 </Box>
                 <Box>
                   <Editable
                     p={5}
-                    defaultValue={profileData.about?.intro || ''}
+                    defaultValue={profileData.about?.intro || 'please enter intro'}
                     isPreviewFocusable={editMode.about && !isViewMode}
                     submitOnBlur={editMode.about && !isViewMode}
                     onSubmit={(value) => handleAboutSubmit('intro', value)} // Calls handleAboutSubmit
                     isDisabled={!editMode.about || isViewMode}
+                    placeholder='Hai plese enter intro'
                   >
                     <EditablePreview
                       fontSize="md"
@@ -1042,91 +1086,76 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
   };
   // Add Progress Bar at the top of the component
   return (
-    <Box minH="100vh" marginTop="-4vh" width="83vw">
-      {/* Profile Completion Progress Bar */}
-      <Box px={6} py={4} bg="white" borderBottom="1px" borderColor="gray.200">
-        <Flex align="center">
-          <Text fontSize="sm" fontWeight="medium" mr={3}>
+    <Box>
+      {/* Profile Completion Progress Bar - Add marginBottom */}
+      <Box mb={6}>
+        <Flex justifyContent="space-between" alignItems="center" mb={2}>
+          <Text fontSize="sm" color="gray.600">
             Profile Completion: {profileCompletion}%
           </Text>
-          <Progress
-            value={profileCompletion}
-            size="sm"
-            width="200px"
-            colorScheme={profileCompletion >= 70 ? 'green' : profileCompletion >= 40 ? 'yellow' : 'red'}
-            borderRadius="md"
-          />
-          <Tooltip label="Complete your profile to increase visibility">
-            <Text ml={2} fontSize="xs" color="gray.500">
-              {profileCompletion < 50 ? 'Keep going!' : profileCompletion < 80 ? 'Looking good!' : 'Excellent!'}
-            </Text>
-          </Tooltip>
+        </Flex>
+        <Progress
+          value={profileCompletion}
+          size="sm"
+          colorScheme={profileCompletion >= 70 ? 'green' : profileCompletion >= 40 ? 'yellow' : 'red'}
+          borderRadius="md"
+        />
+        <Text fontSize="xs" color="gray.500" mt={1} textAlign="right">
+          {profileCompletion < 50 ? 'Keep going!' : profileCompletion < 80 ? 'Looking good!' : 'Excellent!'}
+        </Text>
+      </Box>
+
+      {/* Navigation - Add marginBottom and maybe a border */}
+      <Box
+        mb={8}
+        borderBottomWidth="1px"
+        borderColor="gray.200"
+        pb={2}
+      >
+        <Flex overflowX="auto" py={1}>
+          {tabs.map((tab) => (
+            <Box key={tab.id} flexShrink={0}>
+              <Button
+                variant="unstyled"
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setEditMode({
+                    about: false,
+                    skills: false,
+                    experience: false,
+                    projects: false,
+                    settings: false
+                  });
+                }}
+                color={activeTab === tab.id ? 'gray.800' : 'gray.600'}
+                fontWeight={activeTab === tab.id ? 'semibold' : 'normal'}
+                fontSize="md"
+                px={0}
+                py={2}
+                h="auto"
+                ml={4}
+                mr={6}
+                _hover={{
+                  color: 'gray.800',
+                  bg: 'transparent'
+                }}
+                transition="all 0.2s"
+                leftIcon={tab.id === 'settings' ? <SettingsIcon /> : undefined}
+              >
+                {tab.label}
+              </Button>
+              {activeTab === tab.id && (
+                <Box height="2px" bg="blue.500" borderRadius="full" />
+              )}
+            </Box>
+          ))}
         </Flex>
       </Box>
 
-      {/* Navigation */}
-      <Box
-        position="sticky"
-        top={0}
-        zIndex={1000}
-        bg="rgba(255, 255, 255, 0.8)"
-        backdropFilter="blur(12px)"
-        borderBottom="1px"
-        borderColor="gray.100"
-        py={4}
-      >
-        <Container maxW="container.lg">
-          <HStack spacing={8} justify="center">
-            {tabs.map((tab) => (
-              <Box key={tab.id} position="relative">
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    setEditMode({
-                      about: false,
-                      skills: false,
-                      experience: false,
-                      projects: false,
-                      settings: false
-                    });
-                  }}
-                  color={activeTab === tab.id ? 'gray.800' : 'gray.600'}
-                  fontWeight={activeTab === tab.id ? 'semibold' : 'normal'}
-                  fontSize="md"
-                  px={0}
-                  py={2}
-                  h="auto"
-                  _hover={{
-                    color: 'gray.800',
-                    bg: 'transparent'
-                  }}
-                  transition="all 0.2s"
-                  leftIcon={tab.id === 'settings' ? <SettingsIcon /> : undefined}
-                >
-                  {tab.label}
-                </Button>
-                {activeTab === tab.id && (
-                  <Box
-                    position="absolute"
-                    bottom={-2}
-                    left={0}
-                    right={0}
-                    h="2px"
-                    bg="gray.800"
-                    transition="all 0.3s"
-                  />
-                )}
-              </Box>
-            ))}
-          </HStack>
-        </Container>
-      </Box>
-
-      {/* Content */}
-      <Container maxW="container.lg" px={6} py={12}>
+      {/* Content - This should naturally flow below */}
+      <Box>
         {renderContent()}
-      </Container>
+      </Box>
     </Box>
   );
 };

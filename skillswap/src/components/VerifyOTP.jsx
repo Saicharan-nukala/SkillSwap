@@ -45,7 +45,7 @@ export default function VerifyOTP({ onVerify }) {
       });
 
       onVerify(); // Update global auth state
-      navigate('/profile');
+      navigate('/my-profile');
     } catch (error) {
       toast({
         title: 'Error',

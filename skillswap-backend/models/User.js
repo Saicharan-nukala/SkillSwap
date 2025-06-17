@@ -33,7 +33,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-
+  intrest:{
+    type: String,
+    default:''
+  },
   // Email Verification Fields - NEW
   isEmailVerified: {
     type: Boolean,

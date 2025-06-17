@@ -25,6 +25,7 @@ import {
   Button,
   Tooltip,
   useBreakpointValue,
+  Spinner,
 } from '@chakra-ui/react'
 import {
   FiHome,
@@ -38,10 +39,12 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiX,
+  FiUser,
 } from 'react-icons/fi'
-import { AddIcon ,ChatIcon} from '@chakra-ui/icons'
+import { AddIcon, ChatIcon } from '@chakra-ui/icons'
 
-import { FaBook ,FaChalkboardTeacher ,FaLink } from "react-icons/fa";
+import { FaBook, FaChalkboardTeacher, FaLink } from "react-icons/fa";
+
 const LinkItems = [
   { name: 'Dashboard', icon: FiHome, path: '/dashboard' },
   { name: 'Learning', icon: FaBook, path: '/learning' },
@@ -60,7 +63,6 @@ const SidebarContent = ({ onClose, isCollapsed, onToggleCollapse, ...rest }) => 
       onClose()
     }
   }
-
   const sidebarWidth = isCollapsed ? '80px' : '240px'
 
   return (
@@ -191,15 +193,54 @@ const NavItem = ({ icon, children, onClick, isCollapsed, ...rest }) => {
   return navItem
 }
 
-const MobileNav = ({ onOpen, sidebarWidth, ...rest }) => {
+const MobileNav = ({ onOpen, sidebarWidth, userData, isLoadingUser, ...rest }) => {
   const navigate = useNavigate()
 
   const handleProfile = () => {
-    navigate('/profile')
+    if (userData?._id) {
+      navigate(`/profile/${userData._id}`)
+    } else {
+      navigate('/my-profile')
+    }
   }
 
   const handleNewSwaps = () => {
     navigate('/newswaps')
+  }
+
+  const handleSignout = async () => {
+    try {
+      // Same signout logic as in SidebarContent
+     
+      localStorage.removeItem('user')
+      sessionStorage.removeItem('user')
+      localStorage.removeItem('token')
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('authToken')
+      localStorage.clear()
+      sessionStorage.clear()
+      
+      const cookies = document.cookie.split(";")
+      cookies.forEach((cookie) => {
+        const eqPos = cookie.indexOf("=")
+        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim()
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;`
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;domain=${window.location.hostname};path=/`
+        const domain = window.location.hostname.split('.').slice(-2).join('.')
+        if (domain !== window.location.hostname) {
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;domain=.${domain};path=/`
+        }
+      })
+
+      window.dispatchEvent(new Event('storage'))
+      window.location.href = '/signin'
+      
+    } catch (error) {
+      console.error('Error during signout:', error)
+      window.location.href = '/signin'
+    }
   }
 
   return (
@@ -282,19 +323,27 @@ const MobileNav = ({ onOpen, sidebarWidth, ...rest }) => {
               borderRadius="md"
               px={2}>
               <HStack>
-                <Avatar
-                  size={'sm'}
-                  bg='blue.500'
-                  cursor="pointer"
-                />
+                {isLoadingUser ? (
+                  <Spinner size="sm" />
+                ) : (
+                  <Avatar
+                    size={'sm'}
+                    src={userData?.avatar}
+                    name={userData?.name || userData?.firstName || 'User'}
+                    bg='blue.500'
+                    cursor="pointer"
+                  />
+                )}
                 <VStack
                   display={{ base: 'none', md: 'flex' }}
                   alignItems="flex-start"
                   spacing="1px"
                   ml="2">
-                  <Text fontSize="sm" fontWeight="medium">User Name</Text>
+                  <Text fontSize="sm" fontWeight="medium">
+                    {isLoadingUser ? 'Loading...' : (userData?.firstName+ " " + userData.lastName|| 'User')}
+                  </Text>
                   <Text fontSize="xs" color="gray.600">
-                    Member
+                    {userData?.intrest || 'Member'}
                   </Text>
                 </VStack>
                 <Box display={{ base: 'none', md: 'flex' }}>
@@ -311,7 +360,7 @@ const MobileNav = ({ onOpen, sidebarWidth, ...rest }) => {
               <MenuItem 
                 _hover={{ bg: 'primary.50' }} 
                 onClick={handleProfile}
-                icon={<Icon as={FiHome} />}>
+                icon={<Icon as={FiUser} />}>
                 Profile
               </MenuItem>
               <MenuItem 
@@ -328,7 +377,8 @@ const MobileNav = ({ onOpen, sidebarWidth, ...rest }) => {
               <MenuItem 
                 _hover={{ bg: 'red.50' }} 
                 color="red.500"
-                fontWeight="medium">
+                fontWeight="medium"
+                onClick={handleSignout}>
                 Sign out
               </MenuItem>
             </MenuList>
@@ -342,7 +392,61 @@ const MobileNav = ({ onOpen, sidebarWidth, ...rest }) => {
 const NavBar = ({ children }) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [userData, setUserData] = useState(null)
+  const [isLoadingUser, setIsLoadingUser] = useState(true)
   const isMobile = useBreakpointValue({ base: true, md: false })
+
+  // Fetch user data
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setIsLoadingUser(true)
+        const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user')
+        const token = localStorage.getItem('token') || localStorage.getItem('accessToken')
+        
+        if (storedUser && token) {
+          const parsedUser = JSON.parse(storedUser)
+          
+          // If we have userId, fetch fresh data from API
+          if (parsedUser.userId || parsedUser._id) {
+            const userId = parsedUser.userId || parsedUser._id
+            const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            })
+            
+            if (response.ok) {
+              const freshUserData = await response.json()
+              setUserData(freshUserData)
+            } else {
+              // Fall back to stored user data if API fails
+              setUserData(parsedUser)
+            }
+          } else {
+            // Use stored user data if no ID available
+            setUserData(parsedUser)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error)
+        // Fall back to stored user data
+        const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user')
+        if (storedUser) {
+          try {
+            setUserData(JSON.parse(storedUser))
+          } catch (parseError) {
+            console.error('Error parsing stored user data:', parseError)
+          }
+        }
+      } finally {
+        setIsLoadingUser(false)
+      }
+    }
+
+    fetchUserData()
+  }, [])
 
   // Auto-collapse on mobile
   useEffect(() => {
@@ -364,6 +468,7 @@ const NavBar = ({ children }) => {
         onClose={onClose} 
         isCollapsed={isCollapsed}
         onToggleCollapse={handleToggleCollapse}
+        userData={userData}
         display={{ base: 'none', md: 'block' }} 
       />
       
@@ -380,6 +485,7 @@ const NavBar = ({ children }) => {
             onClose={onClose} 
             isCollapsed={false}
             onToggleCollapse={() => {}}
+            userData={userData}
           />
         </DrawerContent>
       </Drawer>
@@ -389,6 +495,8 @@ const NavBar = ({ children }) => {
         onOpen={onOpen} 
         isCollapsed={isCollapsed}
         sidebarWidth={sidebarWidth}
+        userData={userData}
+        isLoadingUser={isLoadingUser}
       />
       
       {/* Main Content */}
