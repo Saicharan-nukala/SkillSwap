@@ -72,8 +72,6 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
     totalFields++;
     if (data.lastName) completedFields++;
     totalFields++;
-    if (data.username) completedFields++;
-    totalFields++;
     if (data.email) completedFields++;
     totalFields++;
     if (data.about?.intro) completedFields++;
@@ -85,8 +83,6 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
     if (data.experience?.length > 0) completedFields++;
     totalFields++;
     if (data.projects?.length > 0) completedFields++;
-    totalFields++;
-    if (data.avatar) completedFields++;
     totalFields++;
 
     const completionPercentage = totalFields > 0 ? (completedFields / totalFields) * 100 : 0;
@@ -106,8 +102,8 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
         setIsSaving(false);
         return;
       }
-
-      const response = await axios.put(`/api/users/${userId}`, updatedData, {
+      console.log("token : - ", token);
+      const response = await axios.put(`http://localhost:5000/api/users/${userId}`, updatedData, {
         headers: {
           Authorization: `Bearer ${token}` // <--- ADD THIS LINE
         }
@@ -137,7 +133,7 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
 
     } catch (error) {
       console.log(error.config.url);
-      console.log('Making request to:', `/api/users/${userId}`);
+      console.log('Making request to:', `http://localhost:5000/api/users/${userId}`);
       console.log('With data:', updatedData);
       showToast(error.response?.data?.message || 'Could not save profile data', 'error');
       throw error;
@@ -280,16 +276,30 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
     setEditCategoryIndex(savedData.skills.length - 1);
   };
 
-  const handleUpdateSkillCategory = async (index, field, value) => {
+
+  // Handle local state updates without saving
+  const handleSkillCategoryChange = (index, field, value) => {
+    const updatedData = {
+      ...profileData,
+      skills: profileData.skills.map((category, i) =>
+        i === index ? { ...category, [field]: value } : category
+      )
+    };
+    setProfileData(updatedData);
+  };
+
+  // Handle submission when editing is done
+  const handleSkillCategorySubmit = async (index, field, value) => {
     const updatedSkills = [...profileData.skills];
     updatedSkills[index] = {
       ...updatedSkills[index],
       [field]: value
     };
-    await saveProfileData({ // Call saveProfileData
+    await saveProfileData({
       ...profileData,
       skills: updatedSkills
     });
+    setEditCategoryIndex(null); // Exit edit mode after saving
   };
 
   const handleAddSkill = async (categoryIndex) => {
@@ -612,8 +622,16 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
                       {editCategoryIndex === index && editMode.skills && !isViewMode ? (
                         <Input
                           value={category.category}
-                          onChange={(e) => handleUpdateSkillCategory(index, 'category', e.target.value)} // Calls handleUpdateSkillCategory
-                          onBlur={() => setEditCategoryIndex(null)}
+                          onChange={(e) => handleSkillCategoryChange(index, 'category', e.target.value)}
+                          onBlur={(e) => handleSkillCategorySubmit(index, 'category', e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleSkillCategorySubmit(index, 'category', e.target.value);
+                            }
+                            if (e.key === 'Escape') {
+                              setEditCategoryIndex(null);
+                            }
+                          }}
                           autoFocus
                           variant="flushed"
                           fontWeight="medium"
@@ -986,15 +1004,6 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
                   type="email"
                   value={profileData.email} // Access email from top-level profileData
                   onChange={(e) => handleSettingsChange('email', e.target.value)} // Calls handleSettingsChange
-                  isDisabled={isViewMode}
-                />
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>Username</FormLabel>
-                <Input
-                  value={profileData.username} // Access username from top-level profileData
-                  onChange={(e) => handleSettingsChange('username', e.target.value)} // Calls handleSettingsChange
                   isDisabled={isViewMode}
                 />
               </FormControl>
