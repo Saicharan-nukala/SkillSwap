@@ -25,9 +25,23 @@ import {
   Avatar,
   Progress,
   Tooltip,
-  Spinner
+  Spinner,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  Badge,
+  Icon
 } from '@chakra-ui/react';
-import { EditIcon, CloseIcon, AddIcon, SettingsIcon, DeleteIcon } from '@chakra-ui/icons';
+import {
+  EditIcon,
+  CloseIcon,
+  AddIcon,
+  SettingsIcon,
+  DeleteIcon,
+  StarIcon,
+  InfoIcon  // Add this new icon
+} from "@chakra-ui/icons";
 import axios from 'axios';
 
 const ProfileScrollPage = ({ isViewMode = false, userId }) => {
@@ -523,6 +537,7 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
                       />
                       {(editMode.about && !isViewMode) && (
                         <EditableTextarea
+                          placeholder='Please enter Intrest'
                           autoresize
                           fontSize="md"
                           lineHeight="1.7"
@@ -1087,76 +1102,128 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
   // Add Progress Bar at the top of the component
   return (
     <Box>
-      {/* Profile Completion Progress Bar - Add marginBottom */}
-      <Box mb={6}>
-        <Flex justifyContent="space-between" alignItems="center" mb={2}>
-          <Text fontSize="sm" color="gray.600">
-            Profile Completion: {profileCompletion}%
+  {/* Minimalistic Progress Bar - Only show if completion < 80% */}
+  {profileCompletion < 80 && (
+    <Box
+      bg="gray.50"
+      borderRadius="lg"
+      p={4}
+      mb={6}
+      border="1px solid"
+      borderColor="gray.200"
+    >
+      <Flex justifyContent="space-between" alignItems="center" mb={3}>
+        <HStack spacing={2}>
+          <Box
+            w={2}
+            h={2}
+            borderRadius="full"
+            bg={profileCompletion >= 70 ? 'green.400' : profileCompletion >= 40 ? 'yellow.400' : 'blue.400'}
+          />
+          <Text fontSize="sm" fontWeight="medium" color="gray.700">
+            Profile Completion
           </Text>
-        </Flex>
-        <Progress
-          value={profileCompletion}
-          size="sm"
-          colorScheme={profileCompletion >= 70 ? 'green' : profileCompletion >= 40 ? 'yellow' : 'red'}
-          borderRadius="md"
-        />
-        <Text fontSize="xs" color="gray.500" mt={1} textAlign="right">
-          {profileCompletion < 50 ? 'Keep going!' : profileCompletion < 80 ? 'Looking good!' : 'Excellent!'}
+        </HStack>
+        <Text fontSize="sm" color="gray.600">
+          {profileCompletion}%
         </Text>
-      </Box>
+      </Flex>
 
-      {/* Navigation - Add marginBottom and maybe a border */}
-      <Box
-        mb={8}
-        borderBottomWidth="1px"
-        borderColor="gray.200"
-        pb={2}
-      >
-        <Flex overflowX="auto" py={1}>
-          {tabs.map((tab) => (
-            <Box key={tab.id} flexShrink={0}>
-              <Button
-                variant="unstyled"
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  setEditMode({
-                    about: false,
-                    skills: false,
-                    experience: false,
-                    projects: false,
-                    settings: false
-                  });
-                }}
-                color={activeTab === tab.id ? 'gray.800' : 'gray.600'}
-                fontWeight={activeTab === tab.id ? 'semibold' : 'normal'}
-                fontSize="md"
-                px={0}
-                py={2}
-                h="auto"
-                ml={4}
-                mr={6}
-                _hover={{
-                  color: 'gray.800',
-                  bg: 'transparent'
-                }}
-                transition="all 0.2s"
-                leftIcon={tab.id === 'settings' ? <SettingsIcon /> : undefined}
-              >
-                {tab.label}
-              </Button>
-              {activeTab === tab.id && (
-                <Box height="2px" bg="blue.500" borderRadius="full" />
-              )}
-            </Box>
-          ))}
-        </Flex>
-      </Box>
+      {/* Clean Progress Bar */}
+      <Progress
+        value={profileCompletion}
+        size="sm"
+        colorScheme={profileCompletion >= 70 ? 'green' : profileCompletion >= 40 ? 'yellow' : 'blue'}
+        borderRadius="full"
+        bg="gray.200"
+      />
 
-      {/* Content - This should naturally flow below */}
-      <Box>
-        {renderContent()}
-      </Box>
+      {/* Simple Message */}
+      <Text fontSize="xs" color="gray.500" mt={2} textAlign="center">
+        {profileCompletion < 50 
+          ? "Complete your profile to unlock more opportunities" 
+          : "Almost there! Just a few more details needed"
+        }
+      </Text>
     </Box>
+  )}
+
+  {/* Clean Interest Recommendation */}
+  {profileData.intrest.length==0 && (
+    <Box
+      bg={profileCompletion >= 80 ? "blue.600" : "blue.50"}
+      color={profileCompletion >= 80 ? "white" : "blue.800"}
+      borderRadius="lg"
+      p={4}
+      mb={6}
+      border="1px solid"
+      borderColor={profileCompletion >= 80 ? "blue.600" : "blue.200"}
+    >
+      <Flex justifyContent="space-between" alignItems="start">
+        <Box flex="1">
+          <Text fontSize="sm" fontWeight="medium" mb={1}>
+            💡 Add your interests
+          </Text>
+          <Text fontSize="xs" opacity={0.8}>
+            Get personalized recommendations and better job matches
+          </Text>
+        </Box>
+      </Flex>
+    </Box>
+  )}
+
+  {/* Clean Navigation */}
+  <Box
+    mb={8}
+    borderBottomWidth="1px"
+    borderColor="gray.200"
+    pb={2}
+  >
+    <Flex overflowX="auto" py={1}>
+      {tabs.map((tab) => (
+        <Box key={tab.id} flexShrink={0}>
+          <Button
+            variant="unstyled"
+            onClick={() => {
+              setActiveTab(tab.id);
+              setEditMode({
+                about: false,
+                skills: false,
+                experience: false,
+                projects: false,
+                settings: false
+              });
+            }}
+            color={activeTab === tab.id ? 'gray.800' : 'gray.600'}
+            fontWeight={activeTab === tab.id ? 'semibold' : 'normal'}
+            fontSize="md"
+            px={0}
+            py={2}
+            h="auto"
+            ml={4}
+            mr={6}
+            _hover={{
+              color: 'gray.800',
+              bg: 'transparent'
+            }}
+            transition="all 0.2s"
+            leftIcon={tab.id === 'settings' ? <SettingsIcon /> : undefined}
+          >
+            {tab.label}
+          </Button>
+          {activeTab === tab.id && (
+            <Box height="2px" bg="blue.500" borderRadius="full" />
+          )}
+        </Box>
+      ))}
+    </Flex>
+  </Box>
+
+  {/* Content - This should naturally flow below */}
+  <Box>
+    {renderContent()}
+  </Box>
+</Box>
   );
 };
 
