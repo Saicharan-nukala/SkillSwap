@@ -23,6 +23,7 @@ import {
   MenuList,
   Image,
   Button,
+  Badge,
   Tooltip,
   useBreakpointValue,
   Spinner,
@@ -44,7 +45,7 @@ import {
 import { AddIcon, ChatIcon } from '@chakra-ui/icons'
 
 import { FaBook, FaChalkboardTeacher, FaLink } from "react-icons/fa";
-
+import axios from 'axios'
 const LinkItems = [
   { name: 'Dashboard', icon: FiHome, path: '/dashboard' },
   { name: 'Learning', icon: FaBook, path: '/learning' },
@@ -63,6 +64,7 @@ const SidebarContent = ({ onClose, isCollapsed, onToggleCollapse, ...rest }) => 
       onClose()
     }
   }
+  
   const sidebarWidth = isCollapsed ? '80px' : '240px'
 
   return (
@@ -195,7 +197,7 @@ const NavItem = ({ icon, children, onClick, isCollapsed, ...rest }) => {
 
 const MobileNav = ({ onOpen, sidebarWidth, userData, isLoadingUser, ...rest }) => {
   const navigate = useNavigate()
-
+  const [unreadCount, setUnreadCount] = useState(0)
   const handleProfile = () => {
     if (userData?._id) {
       navigate(`/profile/${userData._id}`)
@@ -206,6 +208,9 @@ const MobileNav = ({ onOpen, sidebarWidth, userData, isLoadingUser, ...rest }) =
 
   const handleNewSwaps = () => {
     navigate('/newswaps')
+  }
+   const handleNotification = () => {
+    navigate('/notifications') 
   }
 
   const handleSignout = async () => {
@@ -242,7 +247,38 @@ const MobileNav = ({ onOpen, sidebarWidth, userData, isLoadingUser, ...rest }) =
       window.location.href = '/signin'
     }
   }
+  const fetchUnreadCount = async () => {
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken')
+      if (!token) return
 
+      const response = await axios.get('http://localhost:5000/api/swap-requests/my-requests', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      
+      // Count unmatched responses
+      let count = 0
+      response.data.data.forEach(request => {
+        if (request.status !== 'matched' && request.responses) {
+          count += request.responses.length
+        }
+      })
+      
+      setUnreadCount(count)
+    } catch (error) {
+      console.error('Error fetching notification count:', error)
+      setUnreadCount(0)
+    }
+  }
+
+  useEffect(() => {
+    fetchUnreadCount()
+    
+    // Poll every 30 seconds for new notifications
+    const interval = setInterval(fetchUnreadCount, 30000)
+    
+    return () => clearInterval(interval)
+  }, [])
   return (
     <Flex
       ml={{ base: 0, md: sidebarWidth }}
@@ -292,26 +328,34 @@ const MobileNav = ({ onOpen, sidebarWidth, userData, isLoadingUser, ...rest }) =
           New Swaps
         </Button>
         
-        <IconButton 
-          size="lg" 
-          variant="ghost" 
-          aria-label="notifications" 
-          icon={<FiBell />}
-          color="gray.600"
-          _hover={{ bg: 'primary.50', color: 'primary.600' }}
-          position="relative">
-          {/* Notification Badge */}
-          <Box
-            position="absolute"
-            top="8px"
-            right="8px"
-            w="8px"
-            h="8px"
-            bg="red.500"
-            borderRadius="full"
-            display="none" // Show when there are notifications
+        <Box position="relative">
+          <IconButton
+            size={{ base: 'sm', md: 'md' }}
+            variant="ghost"
+            aria-label="open notifications"
+            icon={<FiBell />}
+            onClick={handleNotification}
+            color="gray.600"
+            _hover={{ bg: 'primary.50', color: 'primary.600' }}
           />
-        </IconButton>
+          {/* Notification Badge - Shows when there are unread notifications */}
+          {unreadCount > 0 && (
+            <Badge
+              position="absolute"
+              top="-1"
+              right="-1"
+              colorScheme="red"
+              borderRadius="full"
+              fontSize="xs"
+              px={2}
+              py={0.5}
+              boxShadow="md"
+              zIndex={1}
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </Badge>
+          )}
+        </Box>
         
         <Flex alignItems={'center'} position="relative" zIndex={1001}>
           <Menu>

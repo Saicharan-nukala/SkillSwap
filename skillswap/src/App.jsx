@@ -8,11 +8,13 @@ import MainPage from './components/MainPage';
 import ProfilePage from './components/ProfilePage';
 import Dashboard from './components/Dashboard';
 import Connections from './components/Swaps';
-import NewSwaps from './components/NewSwaps';
+import NewSwaps from './components/NewSwapsPage';
 import Learnings from './components/Learnings';
 import Teachings from './components/Teachings';
 import Chats from './components/Chats';
-
+import NotificationsPage from './components/NotificationPage';
+import SwapDetailPage from './components/SwapDetailsPage';
+import SessionDetailPage from './components/SessionDetailPage'; 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
@@ -229,6 +231,9 @@ function App() {
             )
           } 
         />
+      <Route path="/notifications" element={<NotificationsPage />} />
+      <Route path="/swap/:swapId" element={<SwapDetailPage />} />
+      <Route path="/session/:sessionId" element={<SessionDetailPage />} />
       </Routes>
     </Router>
   );

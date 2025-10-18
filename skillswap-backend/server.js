@@ -7,11 +7,17 @@ require('dotenv').config();
 // Import routes - FIXED: Import actual route files, not middleware
 const authRoutes = require('./routes/authRoutes'); // ✅ FIXED: Import auth routes
 const userRoutes = require('./routes/userRoutes');
+const swapRoutes = require('./routes/swapRoutes');
+const sessionRoutes = require('./routes/sessionRoutes');
 // Import email service for testing
 const { testEmailConfig } = require('./services/emailService');
 
 const app = express();
 const server = http.createServer(app);
+// Add to your server.js or app.js
+
+
+// Mount routes
 
 // Debug: Verify environment variables are loaded
 console.log('Environment Variables:', {
@@ -28,7 +34,7 @@ const connectDB = async () => {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-
+    
     console.log(`MongoDB Connected: ${conn.connection.host} ✅`);
     
     // Test email configuration after DB connection
@@ -55,7 +61,9 @@ app.use(express.urlencoded({ extended: true }));
 // Routes - FIXED: Use proper route paths
 app.use('/api/auth', authRoutes); // ✅ FIXED: Now uses actual auth routes
 app.use('/api/users', userRoutes);
-
+app.use('/api/swaps', swapRoutes);
+app.use('/api/sessions', sessionRoutes);
+app.use('/api/swap-requests', require('./routes/swapRequestRoutes'));
 // Basic route for testing
 app.get('/', (req, res) => {
   res.json({ 
