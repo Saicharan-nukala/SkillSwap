@@ -377,6 +377,7 @@ exports.completeSwap = async (req, res) => {
   }
 }; 
 // Add message to swap
+// Add message to swap
 exports.addMessageToSwap = async (req, res) => {
   try {
     const { content } = req.body;
@@ -399,13 +400,44 @@ exports.addMessageToSwap = async (req, res) => {
 
     await swap.addMessage(req.user._id, content);
     await swap.populate('messages.sender', 'firstName lastName avatar');
+    await swap.populate('requester receiver', 'firstName lastName avatar email');
+
+    const newMessage = swap.messages[swap.messages.length - 1];
+    
+    // Get io instance
+    const io = req.app.get('io');
+    
+    // ✅ FIX 1: Emit to the swap room (for real-time messages in chat)
+    io.to(req.params.id).emit('newMessage', {
+      ...newMessage.toObject(),
+      swapId: req.params.id,
+      swap: req.params.id
+    });
+    
+    // ✅ FIX 2: Emit to BOTH participants for swap list updates
+    const requesterId = swap.requester._id.toString();
+    const receiverId = swap.receiver._id.toString();
+    
+    // Emit swap list update event with full swap data
+    const swapUpdateData = {
+      swapId: req.params.id,
+      lastMessage: newMessage,
+      lastMessageTime: newMessage.createdAt,
+      requester: requesterId,
+      receiver: receiverId,
+      otherUser: swap.requester._id.toString() === req.user._id.toString() 
+        ? { _id: receiverId, firstName: swap.receiver.firstName, lastName: swap.receiver.lastName, avatar: swap.receiver.avatar }
+        : { _id: requesterId, firstName: swap.requester.firstName, lastName: swap.requester.lastName, avatar: swap.requester.avatar }
+    };
+    
+    // Emit to both users' personal channels
+    io.emit('swapListUpdate', swapUpdateData);
 
     res.status(200).json({
       success: true,
       message: 'Message added successfully',
       data: swap.messages
     });
-
   } catch (error) {
     console.error('Add Message Error:', error);
     res.status(500).json({
@@ -414,7 +446,9 @@ exports.addMessageToSwap = async (req, res) => {
       error: error.message
     });
   }
-}; 
+};
+
+
 // Add review to swap
 exports.addReviewToSwap = async (req, res) => {
   try {
@@ -594,6 +628,47 @@ exports.setupSwap = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message
+    });
+  }
+};
+// Mark messages as read
+exports.markMessagesAsRead = async (req, res) => {
+  try {
+    const swap = await Swap.findById(req.params.id);
+    
+    if (!swap) {
+      return res.status(404).json({
+        success: false,
+        message: 'Swap not found'
+      });
+    }
+    
+    if (!swap.isParticipant(req.user._id)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized'
+      });
+    }
+    
+    await swap.markMessagesAsRead(req.user._id);
+    
+    // Emit socket event
+    const io = req.app.get('io');
+    io.to(req.params.id).emit('messagesRead', { 
+      swapId: req.params.id, 
+      userId: req.user._id 
+    });
+    
+    res.status(200).json({
+      success: true,
+      message: 'Messages marked as read'
+    });
+  } catch (error) {
+    console.error('Mark Messages Read Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error marking messages as read',
+      error: error.message
     });
   }
 };

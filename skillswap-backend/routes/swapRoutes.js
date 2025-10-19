@@ -12,7 +12,8 @@ const {
   addMessageToSwap,
   addReviewToSwap,
   getSwapStats,
-  setupSwap
+  setupSwap,
+  markMessagesAsRead
 } = require('../controllers/swapController');
 
 const protect = require('../middleware/auth');
@@ -36,5 +37,6 @@ router.put('/:id/complete', completeSwap);
 router.post('/:id/messages', addMessageToSwap);
 router.post('/:id/reviews', addReviewToSwap);
 router.put('/:id/setup', setupSwap);
+router.patch('/:id/messages/read', protect,markMessagesAsRead);
 
 module.exports = router;
