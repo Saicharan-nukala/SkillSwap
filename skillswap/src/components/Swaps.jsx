@@ -160,6 +160,55 @@ function ConnectionsPage() {
       console.log(error);
     }
   };
+  const handleComplete = async (swapId) => {
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+      const response = await axios.put(
+        `http://localhost:5000/api/swaps/${swapId}/complete`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      toast({
+        title: 'Swap Completed! 🎉',
+        description: response.data.message || 'Congratulations on completing your skill exchange!',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+
+      // Refresh the swaps list
+      fetchAllData(currentUserId);
+    } catch (error) {
+      const errorData = error.response?.data;
+      const errorMessage = errorData?.message || 'Failed to mark swap as completed';
+
+      // Show detailed progress if available
+      if (errorData?.data) {
+        const { requester, receiver, missingInfo } = errorData.data;
+        const detailedMessage = missingInfo?.join('\n') || errorMessage;
+
+        toast({
+          title: 'Sessions Incomplete',
+          description: detailedMessage,
+          status: 'warning',
+          duration: 6000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          status: 'error',
+          duration: 4000,
+          isClosable: true,
+        });
+      }
+      console.log(error);
+    }
+  };
 
   if (loading) {
     return (
@@ -182,7 +231,7 @@ function ConnectionsPage() {
     <NavBar>
       <Box bg="gray.50" minH="100vh" py={{ base: 4, md: 8 }}>
         <Container maxW="container.2xl">
-          
+
           {/* Header */}
           <VStack spacing={6} align="stretch" mb={8}>
             <HStack spacing={3}>
@@ -221,7 +270,7 @@ function ConnectionsPage() {
               {/* accepted Connections */}
               <TabPanel p={0}>
                 {acceptedSwaps.length === 0 ? (
-                  <EmptyState 
+                  <EmptyState
                     icon={FaHandshake}
                     title="No accepted Connections"
                     description="Start learning by accepting pending requests or finding new partners!"
@@ -235,6 +284,7 @@ function ConnectionsPage() {
                         currentUserId={currentUserId}
                         type="accepted"
                         navigate={navigate}
+                        onComplete={() => handleComplete(swap._id)}
                       />
                     ))}
                   </SimpleGrid>
@@ -244,7 +294,7 @@ function ConnectionsPage() {
               {/* Pending Requests */}
               <TabPanel p={0}>
                 {pendingSwaps.length === 0 ? (
-                  <EmptyState 
+                  <EmptyState
                     icon={FaClock}
                     title="No Pending Requests"
                     description="All caught up! Check out the marketplace to find new learning partners."
@@ -259,6 +309,7 @@ function ConnectionsPage() {
                         type="pending"
                         onAccept={() => handleAccept(swap._id)}
                         onReject={() => handleReject(swap._id)}
+                        navigate={navigate}
                       />
                     ))}
                   </SimpleGrid>
@@ -268,7 +319,7 @@ function ConnectionsPage() {
               {/* Completed */}
               <TabPanel p={0}>
                 {completedSwaps.length === 0 ? (
-                  <EmptyState 
+                  <EmptyState
                     icon={FaCheckCircle}
                     title="No Completed Swaps"
                     description="Complete your accepted connections to see them here!"
@@ -280,6 +331,7 @@ function ConnectionsPage() {
                         key={swap._id}
                         swap={swap}
                         currentUserId={currentUserId}
+                        navigate={navigate}
                         type="completed"
                       />
                     ))}
@@ -295,19 +347,19 @@ function ConnectionsPage() {
 }
 
 // Connection Card Component - PROFESSIONAL LAYOUT
-const ConnectionCard = ({ swap, currentUserId, type, onAccept, onReject, navigate }) => {
+const ConnectionCard = ({ swap, currentUserId, type, onAccept, onReject, navigate ,onComplete}) => {
   if (!swap || !currentUserId) return null;
-  
+
   const isRequester = swap.requester._id?.toString() === currentUserId?.toString();
   const partner = isRequester ? swap.receiver : swap.requester;
   const iTeach = isRequester ? swap.skillExchange.requesterOffering : swap.skillExchange.receiverOffering;
   const iLearn = isRequester ? swap.skillExchange.receiverOffering : swap.skillExchange.requesterOffering;
-  
+
   const isPending = type === 'pending';
   const canAccept = isPending && !isRequester;
 
   return (
-    <Card 
+    <Card
       bg="white"
       borderWidth="1px"
       borderColor="gray.200"
@@ -318,15 +370,22 @@ const ConnectionCard = ({ swap, currentUserId, type, onAccept, onReject, navigat
     >
       <CardBody>
         <VStack align="stretch" spacing={4}>
-          
+
           {/* Partner Info */}
           <HStack justify="space-between">
             <HStack spacing={3}>
-              <Avatar 
-                size="lg" 
+              <Avatar
+                size="lg"
                 name={`${partner.firstName} ${partner.lastName}`}
                 src={partner.avatar}
                 bg="gray.300"
+                cursor="pointer"
+                onClick={() => navigate(`/profile/${partner._id}`)}
+                _hover={{
+                  transform: 'scale(1.05)',
+                  transition: 'all 0.2s',
+                  boxShadow: 'lg'
+                }}
               />
               <VStack align="start" spacing={1}>
                 <Text fontWeight="600" fontSize="lg" color="gray.800">
@@ -344,9 +403,9 @@ const ConnectionCard = ({ swap, currentUserId, type, onAccept, onReject, navigat
           {/* Skills Exchange - ONLY COLORS HERE */}
           <SimpleGrid columns={2} gap={3}>
             <Tooltip label={iTeach.description}>
-              <Box 
-                bg="blue.50" 
-                p={3} 
+              <Box
+                bg="blue.50"
+                p={3}
                 borderRadius="md"
                 borderWidth="1px"
                 borderColor="blue.200"
@@ -361,11 +420,11 @@ const ConnectionCard = ({ swap, currentUserId, type, onAccept, onReject, navigat
                 </VStack>
               </Box>
             </Tooltip>
-            
+
             <Tooltip label={iLearn.description}>
-              <Box 
-                bg="green.50" 
-                p={3} 
+              <Box
+                bg="green.50"
+                p={3}
                 borderRadius="md"
                 borderWidth="1px"
                 borderColor="green.200"
@@ -432,6 +491,16 @@ const ConnectionCard = ({ swap, currentUserId, type, onAccept, onReject, navigat
                   fontWeight="500"
                 >
                   Sessions
+                </Button>
+                <Button
+                  size="sm"
+                  leftIcon={<Icon as={FaCheckCircle} />}
+                  colorScheme="green"
+                  onClick={onComplete}
+                  flex={1}
+                  fontWeight="500"
+                >
+                  Complete
                 </Button>
               </HStack>
             </>

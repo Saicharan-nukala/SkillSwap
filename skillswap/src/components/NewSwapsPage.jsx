@@ -1,5 +1,7 @@
 // src/pages/NewSwaps/NewSwapsPage.jsx - FIXED VERSION
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import {
   Box,
   Container,
@@ -38,7 +40,7 @@ const NewSwapsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState(null);
-  
+  const navigate = useNavigate();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
     isOpen: isDetailsOpen,
@@ -54,11 +56,11 @@ const NewSwapsPage = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-      
+
       const response = await axios.get('http://localhost:5000/api/swap-requests', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       setRequests(response.data.data);
       setLoading(false);
     } catch (error) {
@@ -88,12 +90,11 @@ const NewSwapsPage = () => {
     <NavBar>
       <Box bg="gray.50" minH="100vh" py={{ base: 4, md: 8 }}>
         <Container maxW="container.xl">
-          
-          {/* Header Section */}
+
           <VStack spacing={{ base: 4, md: 6 }} align="stretch" mb={{ base: 6, md: 8 }}>
-            <Flex 
-              direction={{ base: 'column', md: 'row' }} 
-              justify="space-between" 
+            <Flex
+              direction={{ base: 'column', md: 'row' }}
+              justify="space-between"
               align={{ base: 'stretch', md: 'center' }}
               gap={4}
             >
@@ -139,7 +140,7 @@ const NewSwapsPage = () => {
                   }}
                 />
               </InputGroup>
-              
+
               {searchQuery && (
                 <Text mt={3} color="gray.600" fontSize="sm">
                   {filteredRequests.length} {filteredRequests.length === 1 ? 'result' : 'results'} found
@@ -177,6 +178,7 @@ const NewSwapsPage = () => {
                   key={request._id}
                   request={request}
                   onViewDetails={handleViewRequest}
+                  navigate={navigate}
                 />
               ))}
             </SimpleGrid>
@@ -204,8 +206,7 @@ const NewSwapsPage = () => {
 };
 
 // Request Card Component - FIXED
-const RequestCard = ({ request, onViewDetails }) => {
-  // ✅ FIX: Handle location properly - convert object to string
+const RequestCard = ({ request, onViewDetails, navigate }) => {
   const getLocationString = (location) => {
     if (!location) return '';
     if (typeof location === 'string') return location;
@@ -237,15 +238,23 @@ const RequestCard = ({ request, onViewDetails }) => {
             size={{ base: 'md', md: 'lg' }}
             name={`${request.user.firstName} ${request.user.lastName}`}
             src={request.user.avatar}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent card click
+              navigate(`/profile/${request.user._id || request.user.id}`);
+            }}
+            _hover={{
+              transform: 'scale(1.1)',
+              transition: 'all 0.2s',
+              boxShadow: 'lg'
+            }}
             border="3px solid white"
             boxShadow="sm"
           />
-          
+
           <VStack align="start" spacing={0} flex={1}>
             <Text fontWeight="bold" fontSize={{ base: 'md', md: 'lg' }}>
               {request.user.firstName} {request.user.lastName}
             </Text>
-            {/* ✅ FIX: Properly render location string */}
             {request.user.location && (
               <HStack spacing={1} fontSize="xs" color="gray.600">
                 <Icon as={FaMapMarkerAlt} />
@@ -262,7 +271,7 @@ const RequestCard = ({ request, onViewDetails }) => {
 
       <CardBody>
         <VStack align="stretch" spacing={4}>
-          
+
           {/* Offering Section */}
           <Box>
             <HStack mb={2} spacing={2}>
@@ -271,11 +280,11 @@ const RequestCard = ({ request, onViewDetails }) => {
                 Offering to Teach
               </Text>
             </HStack>
-            <Box 
-              bg="green.50" 
-              p={3} 
-              borderRadius="md" 
-              borderLeft="3px solid" 
+            <Box
+              bg="green.50"
+              p={3}
+              borderRadius="md"
+              borderLeft="3px solid"
               borderColor="green.500"
             >
               <Text fontWeight="semibold" fontSize="md" mb={1} noOfLines={1}>
@@ -311,11 +320,11 @@ const RequestCard = ({ request, onViewDetails }) => {
                 Looking to Learn
               </Text>
             </HStack>
-            <Box 
-              bg="blue.50" 
-              p={3} 
-              borderRadius="md" 
-              borderLeft="3px solid" 
+            <Box
+              bg="blue.50"
+              p={3}
+              borderRadius="md"
+              borderLeft="3px solid"
               borderColor="blue.500"
             >
               <Text fontWeight="semibold" fontSize="md" mb={1} noOfLines={1}>

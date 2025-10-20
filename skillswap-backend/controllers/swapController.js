@@ -334,8 +334,11 @@ exports.cancelSwap = async (req, res) => {
 // Complete swap
 exports.completeSwap = async (req, res) => {
   try {
-    const swap = await Swap.findById(req.params.id);
-
+    const Session = require('../models/Session');
+    
+    const swap = await Swap.findById(req.params.id)
+      .populate('requester receiver', 'firstName lastName');
+    
     if (!swap) {
       return res.status(404).json({
         success: false,
@@ -358,15 +361,94 @@ exports.completeSwap = async (req, res) => {
       });
     }
 
+    // Get total expected sessions from both sides
+    const requesterTotalSessions = swap.skillExchange.requesterOffering.totalSessions || 0;
+    const receiverTotalSessions = swap.skillExchange.receiverOffering.totalSessions || 0;
+    const totalExpectedSessions = requesterTotalSessions + receiverTotalSessions;
+
+    if (totalExpectedSessions === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot complete swap. No sessions were planned. Please set up sessions first.'
+      });
+    }
+
+    // Get all sessions for this swap
+    const allSessions = await Session.find({ swap: req.params.id })
+      .populate('teacher', 'firstName lastName');
+    
+    if (allSessions.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot complete swap. No sessions have been created yet.'
+      });
+    }
+
+    // Count completed sessions by each teacher
+    const requesterCompletedSessions = allSessions.filter(
+      s => s.teacher._id.toString() === swap.requester._id.toString() && s.status === 'completed'
+    ).length;
+
+    const receiverCompletedSessions = allSessions.filter(
+      s => s.teacher._id.toString() === swap.receiver._id.toString() && s.status === 'completed'
+    ).length;
+
+    // Check if both sides have completed their required sessions
+    const requesterComplete = requesterCompletedSessions >= requesterTotalSessions;
+    const receiverComplete = receiverCompletedSessions >= receiverTotalSessions;
+
+    if (!requesterComplete || !receiverComplete) {
+      const missingInfo = [];
+      
+      if (!requesterComplete) {
+        missingInfo.push(`${swap.requester.firstName} needs to complete ${requesterTotalSessions - requesterCompletedSessions} more teaching session(s)`);
+      }
+      
+      if (!receiverComplete) {
+        missingInfo.push(`${swap.receiver.firstName} needs to complete ${receiverTotalSessions - receiverCompletedSessions} more teaching session(s)`);
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot complete swap. Both participants must finish their teaching sessions.',
+        data: {
+          requester: {
+            name: swap.requester.firstName,
+            teaching: swap.skillExchange.requesterOffering.skillName,
+            completed: requesterCompletedSessions,
+            required: requesterTotalSessions,
+            isComplete: requesterComplete
+          },
+          receiver: {
+            name: swap.receiver.firstName,
+            teaching: swap.skillExchange.receiverOffering.skillName,
+            completed: receiverCompletedSessions,
+            required: receiverTotalSessions,
+            isComplete: receiverComplete
+          },
+          missingInfo
+        }
+      });
+    }
+
+    // ✅ Both sides have completed their sessions
     swap.status = 'completed';
+    swap.progress.requesterProgress.completedSessions = requesterCompletedSessions;
+    swap.progress.receiverProgress.completedSessions = receiverCompletedSessions;
     await swap.save();
 
     res.status(200).json({
       success: true,
-      message: 'Swap completed successfully',
-      data: swap
+      message: 'Swap completed successfully! 🎉 Both participants have finished their teaching sessions.',
+      data: {
+        swap,
+        summary: {
+          requesterTaught: requesterCompletedSessions,
+          receiverTaught: receiverCompletedSessions,
+          totalSessions: requesterCompletedSessions + receiverCompletedSessions
+        }
+      }
     });
-
   } catch (error) {
     console.error('Complete Swap Error:', error);
     res.status(500).json({
@@ -375,7 +457,8 @@ exports.completeSwap = async (req, res) => {
       error: error.message
     });
   }
-}; 
+};
+
 // Add message to swap
 // Add message to swap
 exports.addMessageToSwap = async (req, res) => {

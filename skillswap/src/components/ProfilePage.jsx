@@ -1,7 +1,8 @@
 // ProfilePage.jsx
+
 'use client'
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import NavBar from "./NavBar";
 import ProfileScrollPage from "./profileScrollPage";
 import { useParams } from 'react-router-dom';
@@ -24,26 +25,37 @@ import { FiUser, FiUsers, FiFileText } from 'react-icons/fi'
 
 function ProfilePage() {
   const { userId } = useParams();
+  const [isViewMode, setIsViewMode] = useState(false);
 
-  // Determine if the profile being viewed is the current user's profile
-  // This logic should be expanded based on your authentication system
-  const isViewMode = false; // Placeholder
-  console.log(userId);
+  useEffect(() => {
+    // Get the current logged-in user's ID from localStorage
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const currentUserId = currentUser?.userId || currentUser?._id;
+
+    // Set isViewMode to true if viewing someone else's profile
+    setIsViewMode(userId !== currentUserId);
+
+    console.log('Viewing userId:', userId);
+    console.log('Current userId:', currentUserId);
+    console.log('isViewMode:', userId !== currentUserId);
+  }, [userId]);
+
   if (!userId) {
     return (
-      <NavBar>
-        <Flex direction="column" align="center" position="relative" pb={10} bg="gray.50">
-          <Text fontSize="xl" color="red.500">Error: User ID not found in URL. Please navigate to a specific user's profile (e.g., /profile/your_id).</Text>
-        </Flex>
-      </NavBar>
+      <Box>
+        <NavBar>
+          <Text>Error: User ID not found in URL. Please navigate to a specific user's profile (e.g., /profile/your_id).</Text>
+        </NavBar>
+      </Box>
     );
   }
 
   return (
-    <NavBar>
-      {/* Pass userId and isViewMode as props to ProfileScrollPage */}
-      <ProfileScrollPage userId={userId} isViewMode={isViewMode} />
-    </NavBar>
+    <Box>
+      <NavBar >
+        <ProfileScrollPage userId={userId} isViewMode={isViewMode} />
+      </NavBar>
+    </Box>
   );
 }
 

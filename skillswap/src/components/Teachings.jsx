@@ -26,8 +26,7 @@ function TeachingPage() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
-  const [view, setView] = useState('swaps'); // swaps or sessions
-
+  const [view, setView] = useState('swaps'); 
   const { isOpen: isSessionOpen, onOpen: onSessionOpen, onClose: onSessionClose } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
 
@@ -60,7 +59,6 @@ function TeachingPage() {
   const handleViewDetails = (sessionId) => {
     navigate(`/session/${sessionId}`);
   };
-
   const fetchSwaps = async (userId) => {
     try {
       setLoading(true);

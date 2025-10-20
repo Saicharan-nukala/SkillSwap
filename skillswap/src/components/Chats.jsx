@@ -103,7 +103,7 @@ function ChatsPage() {
 
     // Listen for user status changes
     socket.on('userStatusChange', ({ userId, isOnline }) => {
-      console.log(`User ${userId} is now ${isOnline ? 'online' : 'offline'}`);
+
       setOnlineUsers((prev) => {
         if (isOnline) {
           return [...new Set([...prev, userId])];
@@ -221,7 +221,6 @@ function ChatsPage() {
       }
     };
   }, [currentUserId, selectedSwap]);
-  // ✅ NEW: Reset unread count when selecting a swap
   useEffect(() => {
     if (selectedSwap) {
       setSwaps((prevSwaps) =>
@@ -555,7 +554,6 @@ function ChatsPage() {
 
                         return (
                           <React.Fragment key={msg._id || idx}>
-
                             {/* Message Bubble */}
                             <Flex justify={isMine ? 'flex-end' : 'flex-start'}>
                               <Box
@@ -579,12 +577,6 @@ function ChatsPage() {
                                       minute: '2-digit'
                                     })}
                                   </Text>
-                                  {isMine && (
-                                    <Text fontSize="xs" opacity={0.8}>
-                                      {/* Handle read receipts for temp messages */}
-                                      {msg.read ? '✓✓' : msg._id.length > 20 ? '✓' : '...'}
-                                    </Text>
-                                  )}
                                 </HStack>
                               </Box>
                             </Flex>
