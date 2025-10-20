@@ -273,7 +273,7 @@ function ChatsPage() {
       });
 
       const activeSwaps = response.data.data.filter(s =>
-        s.status === 'accepted' || s.status === 'active'
+        s.status === 'accepted' || s.status === 'active' || s.status === 'completed'
       );
 
       setSwaps(activeSwaps);
@@ -364,10 +364,20 @@ function ChatsPage() {
   return (
 
     <NavBar>
-      <Container maxW="container.xl">
-        <Grid templateColumns="350px 1fr" gap={1} h="calc(100vh - 120px)">
+      <Box
+        w="100%"
+        h={{ base: "calc(100vh - 60px)", md: "calc(100vh - 64px)" }}
+        overflow="hidden"
+      >
+        <Grid
+          templateColumns={{ base: "1fr", md: "25vw 1fr" }}
+          gap={1}
+          h="100%"
+        >
+
           {/* Left - Conversations List */}
-          <GridItem>
+          <GridItem
+          >
             <Card h="100%" overflowY="auto">
               <VStack align="stretch" spacing={0}>
                 <Box p={4} borderBottom="1px solid" borderBottomColor="gray.200">
@@ -409,7 +419,7 @@ function ChatsPage() {
                               name={`${otherUser?.firstName} ${otherUser?.lastName}`}
                               src={otherUser?.avatar}
                             />
-                            
+
                             <VStack align="start" spacing={1} flex={1} minW={0}>
                               <HStack justify="space-between" w="100%">
                                 <Text fontWeight="bold" fontSize="md" noOfLines={1}>
@@ -646,7 +656,7 @@ function ChatsPage() {
           </GridItem>
 
         </Grid>
-      </Container>
+      </Box>
     </NavBar>
 
   );

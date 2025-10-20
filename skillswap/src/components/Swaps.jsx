@@ -189,7 +189,7 @@ function ConnectionsPage() {
       if (errorData?.data) {
         const { requester, receiver, missingInfo } = errorData.data;
         const detailedMessage = missingInfo?.join('\n') || errorMessage;
-
+        console.log(receiver,requester);
         toast({
           title: 'Sessions Incomplete',
           description: detailedMessage,
@@ -347,7 +347,7 @@ function ConnectionsPage() {
 }
 
 // Connection Card Component - PROFESSIONAL LAYOUT
-const ConnectionCard = ({ swap, currentUserId, type, onAccept, onReject, navigate ,onComplete}) => {
+const ConnectionCard = ({ swap, currentUserId, type, onAccept, onReject, navigate, onComplete }) => {
   if (!swap || !currentUserId) return null;
 
   const isRequester = swap.requester._id?.toString() === currentUserId?.toString();
@@ -511,7 +511,19 @@ const ConnectionCard = ({ swap, currentUserId, type, onAccept, onReject, navigat
                 Waiting for {partner.firstName}'s response...
               </Text>
             </>
-          ) : null}
+          ) :
+            <Button
+              size="sm"
+              leftIcon={<FaComments />}
+              colorScheme="blue"
+              variant="outline"
+              onClick={() => navigate('/chats')}
+              flex={1}
+              fontWeight="500"
+            >
+              Chat
+            </Button>
+          }
         </VStack>
       </CardBody>
     </Card>
