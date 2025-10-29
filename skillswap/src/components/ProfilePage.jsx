@@ -4,7 +4,7 @@
 
 import React, { useEffect, useState } from 'react';
 import NavBar from "./NavBar";
-import ProfileScrollPage from "./profileScrollPage";
+import ProfileScrollPage from "./ProfileScrollPage";
 import { useParams } from 'react-router-dom';
 import {
   Box,
