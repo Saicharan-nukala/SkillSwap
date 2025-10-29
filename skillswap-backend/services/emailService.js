@@ -1,23 +1,17 @@
 // services/emailService.js
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-// Create transporter
-const transporter = nodemailer.createTransport({
-  service: 'gmail', // or your email provider
-  auth: {
-    user: process.env.EMAIL_USERNAME,
-    pass: process.env.EMAIL_PASSWORD // Use app password for Gmail
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Send OTP email
 const sendOTPEmail = async (email, otp, firstName) => {
-  const mailOptions = {
-    from: process.env.EMAIL_USERNAME,
-    to: email,
-    subject: 'Email Verification - Your OTP Code',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+  try {
+    const result = await resend.emails.send({
+      from: 'SkillSwap <onboarding@resend.dev>',
+      to: email,
+      subject: 'Email Verification - Your OTP Code',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <h1 style="color: #333; text-align: center; margin-bottom: 30px;">Email Verification</h1>
           
@@ -50,27 +44,31 @@ const sendOTPEmail = async (email, otp, firstName) => {
           </p>
         </div>
       </div>
-    `
-  };
+      `
+    });
 
-  try {
-    const result = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', result.messageId);
+    console.log("✅ OTP email sent:", result?.id);
     return result;
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error("❌ Email sending failed:", error);
     throw error;
   }
 };
 
-// Test email configuration
+// Test API connection
 const testEmailConfig = async () => {
   try {
-    await transporter.verify();
-    console.log('Email service is ready ✅');
+    await resend.emails.send({
+      from: 'SkillSwap <onboarding@resend.dev>',
+      to: process.env.EMAIL_USERNAME || 'test@example.com',
+      subject: 'Resend Connected Successfully ✅',
+      text: 'Your backend email service is working!'
+    });
+
+    console.log("✅ Resend email service verified");
     return true;
-  } catch (error) {
-    console.error('Email service configuration error:', error);
+  } catch (err) {
+    console.error("❌ Resend configuration error:", err);
     return false;
   }
 };
