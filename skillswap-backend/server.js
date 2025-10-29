@@ -12,7 +12,7 @@ const swapRoutes = require('./routes/swapRoutes');
 const sessionRoutes = require('./routes/sessionRoutes');
 
 // Import email service for testing
-const { testEmailConfig } = require('./services/emailService');
+const { testEmailConfig ,sendOTPEmail} = require('./services/emailService');
 
 const app = express();
 const server = http.createServer(app);
