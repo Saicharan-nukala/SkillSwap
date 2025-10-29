@@ -41,11 +41,13 @@ import {
   FiChevronRight,
   FiX,
   FiUser,
+  FiPlus,
 } from 'react-icons/fi'
 import { AddIcon, ChatIcon } from '@chakra-ui/icons'
 
 import { FaBook, FaChalkboardTeacher, FaLink } from "react-icons/fa";
 import axios from 'axios'
+import NewSwapsPage from './NewSwapsPage';
 const LinkItems = [
   { name: 'Dashboard', icon: FiHome, path: '/dashboard' },
   { name: 'Learning', icon: FaBook, path: '/learning' },
@@ -406,6 +408,12 @@ const MobileNav = ({ onOpen, sidebarWidth, userData, isLoadingUser, ...rest }) =
                 onClick={handleProfile}
                 icon={<Icon as={FiUser} />}>
                 Profile
+              </MenuItem>
+              <MenuItem 
+                _hover={{ bg: 'primary.50' }} 
+                onClick={handleNewSwaps}
+                icon={<Icon as={FiPlus} />}>
+                NewSwaps
               </MenuItem>
               <MenuDivider />
               <MenuItem 
