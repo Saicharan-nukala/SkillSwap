@@ -50,5 +50,25 @@ const sendOTPEmail = async (email, otp, firstName) => {
     console.error("❌ OTP send error:", error.response?.body || error);
   }
 };
+// Test email configuration
+const testEmailConfig = async () => {
+  try {
+    await sgMail.send({
+      to: process.env.EMAIL_USERNAME, // send test to your own email
+      from: process.env.EMAIL_USERNAME,
+      subject: 'SendGrid Connected Successfully ✅',
+      text: 'Your backend email service is working!'
+    });
 
-module.exports = { sendOTPEmail };
+    console.log("✅ SendGrid email service verified");
+    return true;
+  } catch (err) {
+    console.error("❌ SendGrid config error:", err.response?.body || err);
+    return false;
+  }
+};
+
+module.exports = {
+  sendOTPEmail,
+  testEmailConfig
+};
