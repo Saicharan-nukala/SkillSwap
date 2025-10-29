@@ -77,7 +77,7 @@ function ChatsPage() {
     if (!currentUserId) return;
 
     // Initialize socket connection
-    socketRef.current = io('http://localhost:5000', {
+    socketRef.current = io('https://skill-swap-backend-h15b.onrender.com', {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 5,
@@ -268,7 +268,7 @@ function ChatsPage() {
         localStorage.getItem('accessToken') ||
         sessionStorage.getItem('token');
 
-      const response = await axios.get('http://localhost:5000/api/swaps', {
+      const response = await axios.get('https://skill-swap-backend-h15b.onrender.com/api/swaps', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -290,7 +290,7 @@ function ChatsPage() {
   const fetchMessages = async (swapId) => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-      const response = await axios.get(`http://localhost:5000/api/swaps/${swapId}`, {
+      const response = await axios.get(`https://skill-swap-backend-h15b.onrender.com/api/swaps/${swapId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setMessages(response.data.data.messages || []);
@@ -303,7 +303,7 @@ function ChatsPage() {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
       await axios.patch(
-        `http://localhost:5000/api/swaps/${swapId}/messages/read`,
+        `https://skill-swap-backend-h15b.onrender.com/api/swaps/${swapId}/messages/read`,
         {},
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
@@ -326,7 +326,7 @@ function ChatsPage() {
 
       // Send message via API (server will emit socket event)
       await axios.post(
-        `http://localhost:5000/api/swaps/${selectedSwap._id}/messages`,
+        `https://skill-swap-backend-h15b.onrender.com/api/swaps/${selectedSwap._id}/messages`,
         { content: newMessage },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );

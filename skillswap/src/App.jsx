@@ -72,19 +72,6 @@ function App() {
     setIsAuthenticated(true);
   };
 
-  const handleLogout = () => {
-    // Clear storage
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('user');
-    localStorage.clear();
-    sessionStorage.clear();
-    
-    // Update state
-    setIsAuthenticated(false);
-    
-    // Dispatch storage event for cross-component communication
-    window.dispatchEvent(new Event('storage'));
-  };
 
   // ProtectedRoute wrapper
   const ProtectedRoute = ({ children }) => {

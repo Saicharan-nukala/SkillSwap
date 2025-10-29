@@ -54,7 +54,7 @@ const PostRequestModal = ({ isOpen, onClose, onSuccess }) => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        'http://localhost:5000/api/swap-requests',
+        'https://skill-swap-backend-h15b.onrender.com/api/swap-requests',
         formData,
         {
           headers: {

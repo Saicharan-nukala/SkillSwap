@@ -95,10 +95,10 @@ function ConnectionsPage() {
       console.log('Fetching data with token:', token ? 'Found' : 'Not found');
 
       const [swapsRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/swaps', {
+        axios.get('https://skill-swap-backend-h15b.onrender.com/api/swaps', {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        axios.get('http://localhost:5000/api/swaps/stats', {
+        axios.get('https://skill-swap-backend-h15b.onrender.com/api/swaps/stats', {
           headers: { 'Authorization': `Bearer ${token}` }
         }).catch(() => ({ data: { data: {} } }))
       ]);
@@ -116,7 +116,7 @@ function ConnectionsPage() {
   const handleAccept = async (swapId) => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-      await axios.put(`http://localhost:5000/api/swaps/${swapId}/accept`, {}, {
+      await axios.put(`https://skill-swap-backend-h15b.onrender.com/api/swaps/${swapId}/accept`, {}, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       toast({
@@ -141,7 +141,7 @@ function ConnectionsPage() {
   const handleReject = async (swapId) => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-      await axios.put(`http://localhost:5000/api/swaps/${swapId}/reject`,
+      await axios.put(`https://skill-swap-backend-h15b.onrender.com/api/swaps/${swapId}/reject`,
         { reason: 'Not interested' },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
@@ -164,7 +164,7 @@ function ConnectionsPage() {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
       const response = await axios.put(
-        `http://localhost:5000/api/swaps/${swapId}/complete`,
+        `https://skill-swap-backend-h15b.onrender.com/api/swaps/${swapId}/complete`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` }

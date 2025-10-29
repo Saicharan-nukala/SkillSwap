@@ -32,7 +32,7 @@ const RequestDetailsModal = ({ isOpen, onClose, request, onSuccess }) => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
       await axios.post(
-        `http://localhost:5000/api/swap-requests/${request._id}/respond`,
+        `https://skill-swap-backend-h15b.onrender.com/api/swap-requests/${request._id}/respond`,
         {},
         { headers: { 'Authorization': `Bearer ${token}` } }
       );

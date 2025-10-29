@@ -96,14 +96,14 @@ function Dashboard() {
         localStorage.getItem('accessToken') ||
         sessionStorage.getItem('token');
 
-      const sessionsRes = await axios.get('http://localhost:5000/api/sessions/user', {
+      const sessionsRes = await axios.get('https://skill-swap-backend-h15b.onrender.com/api/sessions/user', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const sessionData = sessionsRes.data?.data || [];
       setSessions(Array.isArray(sessionData) ? sessionData : []);
 
       try {
-        const swapsRes = await axios.get('http://localhost:5000/api/swaps', {
+        const swapsRes = await axios.get('https://skill-swap-backend-h15b.onrender.com/api/swaps', {
           headers: { Authorization: `Bearer ${token}` }
         });
         const swapData = swapsRes.data?.data || [];

@@ -65,7 +65,7 @@ function TeachingPage() {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken') || sessionStorage.getItem('token');
 
       // Fetch swaps
-      const response = await axios.get('http://localhost:5000/api/swaps', {
+      const response = await axios.get('https://skill-swap-backend-h15b.onrender.com/api/swaps', {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -81,7 +81,7 @@ function TeachingPage() {
         teachingSwaps.map(async (swap) => {
           try {
             const sessionsResponse = await axios.get(
-              `http://localhost:5000/api/sessions/swap/${swap._id}`,
+              `https://skill-swap-backend-h15b.onrender.com/api/sessions/swap/${swap._id}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             return {
@@ -117,7 +117,7 @@ function TeachingPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-      const response = await axios.get(`http://localhost:5000/api/sessions/swap/${swap._id}`, {
+      const response = await axios.get(`https://skill-swap-backend-h15b.onrender.com/api/sessions/swap/${swap._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       let allSessions = response.data.data || [];
@@ -149,7 +149,7 @@ function TeachingPage() {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
       const response = await axios.put(
-        `http://localhost:5000/api/swaps/${selectedSwap._id}/setup`,
+        `https://skill-swap-backend-h15b.onrender.com/api/swaps/${selectedSwap._id}/setup`,
         { totalSessions },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -180,7 +180,7 @@ function TeachingPage() {
     if (!window.confirm('Are you sure you want to delete this session?')) return;
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-      await axios.delete(`http://localhost:5000/api/sessions/${sessionId}`, {
+      await axios.delete(`https://skill-swap-backend-h15b.onrender.com/api/sessions/${sessionId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast({
@@ -626,7 +626,7 @@ const CreateSessionModal = ({ isOpen, onClose, swap, currentUserId, onSuccess })
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
 
       await axios.post(
-        'http://localhost:5000/api/sessions',
+        'https://skill-swap-backend-h15b.onrender.com/api/sessions',
         {
           ...formData,
           swap: swap._id,

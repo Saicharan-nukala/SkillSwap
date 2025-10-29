@@ -54,7 +54,7 @@ function SessionDetailPage() {
   const fetchCurrentUser = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/auth/me', {
+      const response = await axios.get('https://skill-swap-backend-h15b.onrender.com/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCurrentUser(response.data.data);
@@ -66,7 +66,7 @@ function SessionDetailPage() {
   const fetchSessionDetails = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5000/api/sessions/${sessionId}`, {
+      const response = await axios.get(`https://skill-swap-backend-h15b.onrender.com/api/sessions/${sessionId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSession(response.data.data);
@@ -98,7 +98,7 @@ function SessionDetailPage() {
   const handleUpdateSession = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5000/api/sessions/${sessionId}`, editData, {
+      await axios.put(`https://skill-swap-backend-h15b.onrender.com/api/sessions/${sessionId}`, editData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast({
@@ -124,7 +124,7 @@ function SessionDetailPage() {
   const handleUpdateNotes = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`http://localhost:5000/api/sessions/${sessionId}/notes`, 
+      await axios.patch(`https://skill-swap-backend-h15b.onrender.com/api/sessions/${sessionId}/notes`, 
         { notes },
         { headers: { Authorization: `Bearer ${token}` }}
       );
@@ -151,7 +151,7 @@ function SessionDetailPage() {
   const handleRateSession = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`http://localhost:5000/api/sessions/${sessionId}/rate`,
+      await axios.patch(`https://skill-swap-backend-h15b.onrender.com/api/sessions/${sessionId}/rate`,
         { rating, feedback: ratingFeedback },
         { headers: { Authorization: `Bearer ${token}` }}
       );
@@ -180,7 +180,7 @@ function SessionDetailPage() {
   const handleStatusUpdate = async (status, reason = '') => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`http://localhost:5000/api/sessions/${sessionId}/status`,
+      await axios.patch(`https://skill-swap-backend-h15b.onrender.com/api/sessions/${sessionId}/status`,
         { status, reason },
         { headers: { Authorization: `Bearer ${token}` }}
       );
@@ -209,7 +209,7 @@ function SessionDetailPage() {
   const handleConfirmAttendance = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`http://localhost:5000/api/sessions/${sessionId}/attendance`,
+      await axios.patch(`https://skill-swap-backend-h15b.onrender.com/api/sessions/${sessionId}/attendance`,
         {},
         { headers: { Authorization: `Bearer ${token}` }}
       );

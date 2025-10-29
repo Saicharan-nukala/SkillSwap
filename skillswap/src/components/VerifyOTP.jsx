@@ -25,7 +25,7 @@ export default function VerifyOTP({ onVerify }) {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/verify-otp', {
+      const response = await fetch('https://skill-swap-backend-h15b.onrender.com/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, otp }),

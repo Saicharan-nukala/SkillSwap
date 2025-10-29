@@ -252,7 +252,7 @@ const MobileNav = ({ onOpen, sidebarWidth, userData, isLoadingUser, ...rest }) =
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken')
       if (!token) return
 
-      const response = await axios.get('http://localhost:5000/api/swap-requests/my-requests', {
+      const response = await axios.get('https://skill-swap-backend-h15b.onrender.com/api/swap-requests/my-requests', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       
@@ -444,7 +444,7 @@ const NavBar = ({ children }) => {
           // If we have userId, fetch fresh data from API
           if (parsedUser.userId || parsedUser._id) {
             const userId = parsedUser.userId || parsedUser._id
-            const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+            const response = await fetch(`https://skill-swap-backend-h15b.onrender.com/api/users/${userId}`, {
               headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'

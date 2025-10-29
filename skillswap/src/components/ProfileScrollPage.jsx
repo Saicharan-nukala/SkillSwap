@@ -111,7 +111,7 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
         return;
       }
       console.log("token : - ", token);
-      const response = await axios.put(`http://localhost:5000/api/users/${userId}`, updatedData, {
+      const response = await axios.put(`https://skill-swap-backend-h15b.onrender.com/api/users/${userId}`, updatedData, {
         headers: {
           Authorization: `Bearer ${token}` // <--- ADD THIS LINE
         }
@@ -141,7 +141,7 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
 
     } catch (error) {
       console.log(error.config.url);
-      console.log('Making request to:', `http://localhost:5000/api/users/${userId}`);
+      console.log('Making request to:', `https://skill-swap-backend-h15b.onrender.com/api/users/${userId}`);
       console.log('With data:', updatedData);
       showToast(error.response?.data?.message || 'Could not save profile data', 'error');
       throw error;
@@ -156,10 +156,10 @@ const ProfileScrollPage = ({ isViewMode = false, userId }) => {
         // Get token from localStorage or wherever you store it
         const token = localStorage.getItem('token'); // or however you store the token
 
-        console.log('Making request to:', `http://localhost:5000/api/users/${userId}`);
+        console.log('Making request to:', `https://skill-swap-backend-h15b.onrender.com/api/users/${userId}`);
         console.log('With token:', token ? 'Token exists' : 'No token');
 
-        const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+        const response = await fetch(`https://skill-swap-backend-h15b.onrender.com/api/users/${userId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

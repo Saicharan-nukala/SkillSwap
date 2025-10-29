@@ -59,7 +59,7 @@ function LearningPage() {
       setLoading(true);
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken') || sessionStorage.getItem('token');
 
-      const response = await axios.get('http://localhost:5000/api/swaps', {
+      const response = await axios.get('https://skill-swap-backend-h15b.onrender.com/api/swaps', {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -75,7 +75,7 @@ function LearningPage() {
         learningSwaps.map(async (swap) => {
           try {
             const sessionsResponse = await axios.get(
-              `http://localhost:5000/api/sessions/swap/${swap._id}`,
+              `https://skill-swap-backend-h15b.onrender.com/api/sessions/swap/${swap._id}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             return {
@@ -111,7 +111,7 @@ function LearningPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-      const response = await axios.get(`http://localhost:5000/api/sessions/swap/${swap._id}`, {
+      const response = await axios.get(`https://skill-swap-backend-h15b.onrender.com/api/sessions/swap/${swap._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

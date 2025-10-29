@@ -50,10 +50,10 @@ const NotificationsPage = () => {
       }
 
       const [swapsRes, sessionsRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/swaps', {
+        axios.get('https://skill-swap-backend-h15b.onrender.com/api/swaps', {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        axios.get('http://localhost:5000/api/sessions', {
+        axios.get('https://skill-swap-backend-h15b.onrender.com/api/sessions', {
           headers: { 'Authorization': `Bearer ${token}` }
         }).catch(() => ({ data: { data: [] } }))
       ]);

@@ -57,7 +57,7 @@ const NewSwapsPage = () => {
       setLoading(true);
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
 
-      const response = await axios.get('http://localhost:5000/api/swap-requests', {
+      const response = await axios.get('https://skill-swap-backend-h15b.onrender.com/api/swap-requests', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
