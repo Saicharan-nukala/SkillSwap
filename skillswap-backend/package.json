@@ -17,6 +17,7 @@
   "author": "Nukala Sai Charan",
   "license": "ISC",
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.6.1",
     "cors": "^2.8.5",

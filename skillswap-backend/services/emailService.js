@@ -1,17 +1,13 @@
-// services/emailService.js
-const { Resend } = require('resend');
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-// Send OTP email
 const sendOTPEmail = async (email, otp, firstName) => {
-  try {
-    const result = await resend.emails.send({
-      from: 'SkillSwap <onboarding@resend.dev>',
-      to: email,
-      subject: 'Email Verification - Your OTP Code',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+  const msg = {
+    to: email,
+    from: 'skillswapptplp@gmail.com',  // Single sender verified email
+    subject: 'Email Verification - Your OTP Code',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <h1 style="color: #333; text-align: center; margin-bottom: 30px;">Email Verification</h1>
           
@@ -44,36 +40,15 @@ const sendOTPEmail = async (email, otp, firstName) => {
           </p>
         </div>
       </div>
-      `
-    });
+    `
+  };
 
-    console.log("✅ OTP email sent:", result?.id);
-    return result;
-  } catch (error) {
-    console.error("❌ Email sending failed:", error);
-    throw error;
-  }
-};
-
-// Test API connection
-const testEmailConfig = async () => {
   try {
-    await resend.emails.send({
-      from: 'SkillSwap <onboarding@resend.dev>',
-      to: process.env.EMAIL_USERNAME || 'test@example.com',
-      subject: 'Resend Connected Successfully ✅',
-      text: 'Your backend email service is working!'
-    });
-
-    console.log("✅ Resend email service verified");
-    return true;
-  } catch (err) {
-    console.error("❌ Resend configuration error:", err);
-    return false;
+    const result = await sgMail.send(msg);
+    console.log("✅ OTP sent to:", email);
+  } catch (error) {
+    console.error("❌ OTP send error:", error.response?.body || error);
   }
 };
 
-module.exports = {
-  sendOTPEmail,
-  testEmailConfig
-};
+module.exports = { sendOTPEmail };
