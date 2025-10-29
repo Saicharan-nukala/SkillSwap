@@ -95,7 +95,7 @@ console.log('Environment Variables:', {
   PORT: process.env.PORT,
   MONGO_URI: process.env.MONGO_URI ? '*****' : 'undefined',
   EMAIL_USERNAME: process.env.EMAIL_USERNAME ? '*****' : 'undefined',
-  EMAIL_PASSWORD: process.env.EMAIL_PASSWORD ? '*****' : 'undefined'
+  SENDGRID_API_KEY: process.env.SENDGRID_API_KEY ? '*****' : 'undefined'
 });
 
 const connectDB = async () => {
@@ -137,7 +137,14 @@ app.get('/', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
-
+app.get('/test-mail', async (req, res) => {
+  try {
+    await sendOTPEmail(process.env.EMAIL_USERNAME, "999999", "Test User");
+    res.json({ success: true, message: "Test mail sent ✅" });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
