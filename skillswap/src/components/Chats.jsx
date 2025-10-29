@@ -273,7 +273,7 @@ function ChatsPage() {
       });
 
       const activeSwaps = response.data.data.filter(s =>
-        s.status === 'accepted' || s.status === 'active' || s.status === 'completed'
+        s.status === 'accepted' || s.status === 'active' || s.status === 'completed' || s.status === 'pending'
       );
 
       setSwaps(activeSwaps);

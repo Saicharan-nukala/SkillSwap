@@ -407,16 +407,6 @@ const MobileNav = ({ onOpen, sidebarWidth, userData, isLoadingUser, ...rest }) =
                 icon={<Icon as={FiUser} />}>
                 Profile
               </MenuItem>
-              <MenuItem 
-                _hover={{ bg: 'primary.50' }}
-                icon={<Icon as={FiSettings} />}>
-                Settings
-              </MenuItem>
-              <MenuItem 
-                _hover={{ bg: 'primary.50' }}
-                icon={<Icon as={FiStar} />}>
-                Billing
-              </MenuItem>
               <MenuDivider />
               <MenuItem 
                 _hover={{ bg: 'red.50' }} 
