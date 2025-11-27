@@ -211,26 +211,28 @@ Responses to a request create a pending swap.
 
 # Swap Flow
 
-### 1. User A posts a skill request
+1. User A creates a skill request (SwapRequest with status "open").
 
-### 2. User B responds
+2. Other users (B, C, D, …) click **"Request to Respond"** on A's request.
+   - For each responder, the backend creates a **Swap** with:
+     - requester = responder (e.g., User B)
+     - receiver = request owner (User A)
+     - status = "pending"
+     - skillExchange based on the original request
 
-### 3. Swap is created with status: pending
+3. User A sees all incoming **pending Swaps** where they are the receiver.
+   - This represents all the "Request to Respond" actions they have received.
 
-### 4. Only the receiver of the swap can accept or reject
+4. User A chooses one pending Swap and **accepts** it.
+   - Only the receiver can accept.
+   - The accepted Swap's status becomes "accepted".
+   - Other pending swaps involving the same users are cleaned up.
+   - Related skill requests for both users are marked inactive and linked to this Swap.
 
-### 5. On acceptance:
-
-* Swap becomes accepted
-* All other pending swaps between both users are deleted
-* All related swap requests are marked inactive
-
-### 6. Swap becomes active once users begin scheduling sessions
-
-### 7. Swap completes when:
-
-* Both sides complete their required teaching sessions
-* Backend checks session count and marks swap as completed
+5. Once a Swap is accepted:
+   - Both users can configure how many sessions they will teach.
+   - They can start creating and attending sessions.
+   - When both finish their planned sessions, the Swap can be marked as "completed".
 
 ---
 
