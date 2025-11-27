@@ -457,9 +457,8 @@ erDiagram
         string status
         object preferences
         array sessions
-        object progress
         array messages
-        object reviews
+        object progress
     }
 
     SESSION {
@@ -479,10 +478,11 @@ erDiagram
     USER ||--o{ SWAPREQUEST : creates
     USER ||--o{ SWAP : requester
     USER ||--o{ SWAP : receiver
-    SWAPREQUEST ||--o{ SWAP : "converted into"
+    SWAPREQUEST ||..o{ SWAP : generatesPendingOnResponse
     SWAP ||--o{ SESSION : contains
     USER ||--o{ SESSION : teacher
     USER ||--o{ SESSION : learner
+
 ```
 
 ---
@@ -492,18 +492,19 @@ erDiagram
 ```mermaid
 flowchart LR
 
-A[Client - React + Chakra UI <br> skill-swap-gilt.vercel.app] 
-    -->|HTTPS Requests| B[Backend - Express API <br> /api/* Routes]
+Frontend[React + Chakra UI<br>https://skill-swap-gilt.vercel.app] 
+    -->|HTTPS API Requests| Backend[Express.js REST API]
 
-A -->|WebSocket| C[Socket.IO Server]
+Frontend -->|WebSocket| SocketServer[Socket.IO Server]
 
-B --> D[(MongoDB Atlas)]
-C --> D
+Backend --> MongoDB[(MongoDB Atlas)]
+SocketServer --> MongoDB
 
-subgraph "Node.js Backend"
-B
-C
+subgraph Node.js Backend
+Backend
+SocketServer
 end
+
 ```
 
 ---
@@ -512,23 +513,32 @@ end
 
 ```mermaid
 sequenceDiagram
-    participant A as User A (Requester)
-    participant B as User B (Receiver)
+    participant A as User A (Request Creator)
+    participant B as User B (Responder)
     participant API as Backend API
     participant DB as MongoDB
 
-    A->>API: Create Swap Request
-    API->>DB: Save swap (pending)
-    B->>API: Accept Swap
-    API->>DB: Update status to accepted
-    API->>DB: Delete other pending swaps between A & B
-    A->>API: Set teaching sessions
-    B->>API: Set teaching sessions
-    A->>API: Create Sessions
-    B->>API: Create Sessions
-    A->>API: Complete Sessions
-    B->>API: Complete Sessions
-    API->>DB: Mark swap as completed
+    A->>API: Create SkillRequest
+    API->>DB: Save SwapRequest(status: "open")
+
+    B->>API: Request to Respond
+    API->>DB: Create Swap(status: "pending", requester=B, receiver=A)
+
+    C->>API: Request to Respond
+    API->>DB: Create another Swap(status: "pending", requester=C, receiver=A)
+
+    A->>API: View all pending Swaps (incoming responses)
+    API->>A: Return swaps where receiver=A and status=pending
+
+    A->>API: Accept one pending Swap
+    API->>DB: Update chosen Swap → status:"accepted"
+
+    API->>DB: Delete other pending swaps between same users
+
+    API->>DB: Mark related SwapRequest as "inactive" and link relatedSwap
+
+    Note over A,B: Swap is now active and sessions can be created
+
 ```
 
 ---
@@ -569,13 +579,14 @@ sequenceDiagram
     User1->>Socket: joinRoom(swapId)
     User2->>Socket: joinRoom(swapId)
 
-    User1->>Socket: sendMessage
-    Socket->>DB: Save message inside swap.messages
-    Socket->>User2: newMessage event (real-time)
+    User1->>Socket: sendMessage(content)
+    Socket->>DB: Save message inside Swap.messages[]
+    Socket->>User2: Emit newMessage event
 
-    User2->>Socket: markAsRead
-    Socket->>DB: Update read flags
-    Socket->>User1: messagesRead event
+    User2->>Socket: markAsRead(swapId)
+    Socket->>DB: Update read status
+    Socket->>User1: Emit messagesRead event
+
 ```
 
 
