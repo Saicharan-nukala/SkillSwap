@@ -416,3 +416,166 @@ Backend requires:
 * CLIENT_URL
 
 
+1. **ER Diagram** (Users, SwapRequests, Swaps, Sessions)
+2. **System Architecture Diagram** (Frontend → Backend → DB + Socket Layer)
+3. **Swap Lifecycle Diagram**
+4. **Session Workflow Diagram**
+5. **Real-Time Chat Flow Diagram**
+
+# 1. ER Diagram (Mermaid)
+
+```mermaid
+erDiagram
+    USER {
+        string firstName
+        string lastName
+        string email
+        string password
+        string avatar
+        string intrest
+        object about
+        array skills
+        array experience
+        array projects
+        object socialLinks
+        object location
+        object availability
+        boolean isEmailVerified
+    }
+
+    SWAPREQUEST {
+        object offering
+        object lookingFor
+        object preferences
+        string status
+    }
+
+    SWAP {
+        object skillExchange
+        string status
+        object preferences
+        array sessions
+        object progress
+        array messages
+        object reviews
+    }
+
+    SESSION {
+        string title
+        string description
+        date scheduledDate
+        string startTime
+        string endTime
+        number duration
+        string format
+        string location
+        string status
+        object attendance
+        string notes
+    }
+
+    USER ||--o{ SWAPREQUEST : creates
+    USER ||--o{ SWAP : requester
+    USER ||--o{ SWAP : receiver
+    SWAPREQUEST ||--o{ SWAP : "converted into"
+    SWAP ||--o{ SESSION : contains
+    USER ||--o{ SESSION : teacher
+    USER ||--o{ SESSION : learner
+```
+
+---
+
+# 2. System Architecture Diagram (Mermaid)
+
+```mermaid
+flowchart LR
+
+A[Client - React + Chakra UI <br> skill-swap-gilt.vercel.app] 
+    -->|HTTPS Requests| B[Backend - Express API <br> /api/* Routes]
+
+A -->|WebSocket| C[Socket.IO Server]
+
+B --> D[(MongoDB Atlas)]
+C --> D
+
+subgraph "Node.js Backend"
+B
+C
+end
+```
+
+---
+
+# 3. Swap Lifecycle Diagram
+
+```mermaid
+sequenceDiagram
+    participant A as User A (Requester)
+    participant B as User B (Receiver)
+    participant API as Backend API
+    participant DB as MongoDB
+
+    A->>API: Create Swap Request
+    API->>DB: Save swap (pending)
+    B->>API: Accept Swap
+    API->>DB: Update status to accepted
+    API->>DB: Delete other pending swaps between A & B
+    A->>API: Set teaching sessions
+    B->>API: Set teaching sessions
+    A->>API: Create Sessions
+    B->>API: Create Sessions
+    A->>API: Complete Sessions
+    B->>API: Complete Sessions
+    API->>DB: Mark swap as completed
+```
+
+---
+
+# 4. Session Workflow Diagram
+
+```mermaid
+flowchart TD
+
+A[Participant Creates Session] --> B{Creator?}
+B -->|Requester| C[Requester becomes Teacher]
+B -->|Receiver| D[Receiver becomes Teacher]
+
+C --> E[Session Stored in MongoDB]
+D --> E
+
+E --> F[Learner Confirms Attendance]
+F --> G[Teacher Confirms Attendance]
+
+G --> H{Both Confirmed?}
+H -->|Yes| I[Teacher Marks Completed]
+H -->|No| F
+
+I --> J[Session Completed]
+```
+
+---
+
+# 5. Real-Time Chat Flow (Socket.IO)
+
+```mermaid
+sequenceDiagram
+    participant User1
+    participant User2
+    participant Socket as Socket.IO Server
+    participant DB as MongoDB
+
+    User1->>Socket: joinRoom(swapId)
+    User2->>Socket: joinRoom(swapId)
+
+    User1->>Socket: sendMessage
+    Socket->>DB: Save message inside swap.messages
+    Socket->>User2: newMessage event (real-time)
+
+    User2->>Socket: markAsRead
+    Socket->>DB: Update read flags
+    Socket->>User1: messagesRead event
+```
+
+
+
+
