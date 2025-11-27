@@ -3,6 +3,7 @@
 SkillSwap is a MERN-based platform that enables users to connect, learn, and teach skills directly to each other. The platform follows a structured skill-exchange workflow with user profiles, swap requests, responses, real-time chat, session scheduling, attendance confirmation, and complete swap lifecycle management.
 
 Developer: **Nukala Sai Charan**
+Live Deployment: https://skill-swap-gilt.vercel.app/
 
 ---
 
